@@ -11,8 +11,8 @@ Tickets es un proyecto diseñado para gestionar entradas a eventos, generar qr y
 
 1. **Clona el repositorio:**
 
-   git clone https://github.com/sebastiansorich/TiketsHalloween.git
-   cd AssistMe
+    git clone https://github.com/sebastiansorich/TiketsHalloween.git
+    cd AssistMe
    
 
 2. **Crea un entorno virtual:**
