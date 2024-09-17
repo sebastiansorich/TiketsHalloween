@@ -207,7 +207,7 @@ def generate_invitation_with_qr(token):
         background = Image.open(image_path)
 
         # Redimensionar el QR para que encaje bien en la invitación
-        qr_size = (200, 200)  # Cambia el tamaño según lo necesites
+        qr_size = (400, 400)  # Cambia el tamaño según lo necesites
         qr_img = qr_img.resize(qr_size)
 
         # Calcular la posición para centrar el QR en la imagen de fondo
