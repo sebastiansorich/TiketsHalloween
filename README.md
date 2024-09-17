@@ -1,4 +1,4 @@
-# AssistMe
+# Tickets Halloween
 
 Tickets es un proyecto diseñado para gestionar entradas a eventos, generar QR y validarlos.
 
