@@ -1,7 +1,10 @@
-from flask import request, jsonify
+import io
+import os
+from PIL import Image 
+from flask import request, jsonify, send_file
 from datetime import datetime
-
 import pytz
+import qrcode
 from ..models.ticket import Ticket
 from .. import db
 from ..schemas.ticket_schema import ticket_schema, tickets_schema
@@ -154,3 +157,74 @@ def delete_ticket(id):
         return jsonify({"error": str(e)}), 500
     finally:
         db.session.close()
+
+def generate_qr(token):
+    try:
+        # Generar el código QR a partir del token
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(token)
+        qr.make(fit=True)
+
+        # Crear la imagen QR
+        img = qr.make_image(fill="black", back_color="white")
+
+        # Guardar la imagen en un objeto de memoria para enviarla como respuesta
+        img_io = io.BytesIO()
+        img.save(img_io, 'PNG')
+        img_io.seek(0)
+
+        # Retornar la imagen como archivo adjunto
+        return send_file(img_io, mimetype='image/png')
+
+    except SQLAlchemyError as e:
+        return jsonify({"error": "Database error occurred"}), 500
+    except Exception as e:
+        return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
+    
+def generate_invitation_with_qr(token):
+    try:
+        # Crear el código QR
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(token)
+        qr.make(fit=True)
+        qr_img = qr.make_image(fill="black", back_color="white")
+
+        # Construir la ruta absoluta correctamente hacia la carpeta 'static'
+        base_dir = os.path.abspath(os.path.dirname(__file__))  # Obtén el directorio actual
+        image_path = os.path.join(base_dir, '..', '..', 'static', 'invitation_background.png')  # Navega hasta la carpeta 'static'
+
+        # Cargar la imagen de fondo de la invitación
+        background = Image.open(image_path)
+
+        # Redimensionar el QR para que encaje bien en la invitación
+        qr_size = (200, 200)  # Cambia el tamaño según lo necesites
+        qr_img = qr_img.resize(qr_size)
+
+        # Calcular la posición para centrar el QR en la imagen de fondo
+        bg_width, bg_height = background.size
+        qr_x = (bg_width - qr_img.width) // 2
+        qr_y = (bg_height - qr_img.height) // 2
+
+        # Pegar el código QR en el fondo
+        background.paste(qr_img, (qr_x, qr_y))
+
+        # Guardar la imagen combinada en memoria
+        img_io = io.BytesIO()
+        background.save(img_io, 'PNG')
+        img_io.seek(0)
+
+        # Devolver la imagen final con el QR como archivo adjunto
+        return send_file(img_io, mimetype='image/png')
+
+    except Exception as e:
+        return {"error": f"An unexpected error occurred: {str(e)}"}, 500
