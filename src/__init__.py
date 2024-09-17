@@ -2,6 +2,7 @@
 
 import os
 from flask import jsonify, Flask
+from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from flask_migrate import Migrate
@@ -10,7 +11,7 @@ from flask_migrate import Migrate
 db = SQLAlchemy()
 ma = Marshmallow()
 migrate = Migrate()
-
+ 
 
 
 def create_app():
@@ -21,6 +22,9 @@ def create_app():
     db.init_app(app)
     ma.init_app(app)
     migrate.init_app(app, db)
+
+     # Configuración de CORS
+    CORS(app, resources={r"/*": {"origins": "https://tickets-scanner.vercel.app"}})  # Permitir solicitudes desde tu dominio
 
     # Importar modelos dentro del contexto de la aplicación
     with app.app_context():
