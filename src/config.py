@@ -1,6 +1,10 @@
 #src/__init__.py
 import os
 
+import pymysql
+
+# Instalar pymysql como MySQLdb
+pymysql.install_as_MySQLdb()
 # Cargar variables de entorno de .env
 from dotenv import load_dotenv
 load_dotenv()
