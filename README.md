@@ -1,6 +1,6 @@
 # AssistMe
 
-Tickets es un proyecto diseñado para gestionar entradas a eventos, generar qr y validarlos.
+Tickets es un proyecto diseñado para gestionar entradas a eventos, generar QR y validarlos.
 
 ## Requisitos
 
@@ -11,34 +11,44 @@ Tickets es un proyecto diseñado para gestionar entradas a eventos, generar qr y
 
 1. **Clona el repositorio:**
 
+    ```bash
     git clone https://github.com/sebastiansorich/TiketsHalloween.git
-    cd AssistMe
-   
+    cd TiketsHalloween
+    ```
 
 2. **Crea un entorno virtual:**
 
+    ```bash
     python -m venv venv
+    ```
 
 3. **Activa el entorno virtual:**
 
     En Windows:
 
-        .\venv\Scripts\activate
+    ```bash
+    .\venv\Scripts\activate
+    ```
+
     En macOS/Linux:
 
-        source venv/bin/activate
+    ```bash
+    source venv/bin/activate
+    ```
         
 4. **Instala las dependencias:**
 
+    ```bash
     pip install -r requirements.txt
+    ```
 
 ## Configuración
 
 1. **Configura las variables de entorno:**
 
-Crea un archivo .env en la raíz del proyecto y añade las siguientes variables:
+Crea un archivo `.env` en la raíz del proyecto y añade las siguientes variables:
 
 env:
 
-DATABASE_URI=mysql+pymysql://root:Passw0rd@localhost/probandoflask
+DATABASE_URI=mysql+pymysql://root:Passw0rd@localhost/NombreDeTuBaseDeDatos
 
