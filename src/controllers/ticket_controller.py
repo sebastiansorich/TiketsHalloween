@@ -66,23 +66,41 @@ def verify_ticket(token):
 
 def use_ticket(token):
     try:
+        # Buscar el ticket por token
         ticket = Ticket.query.filter_by(token=token).first()
+        
         if not ticket:
             # Si el ticket no existe, respondemos con un error 404
-            return jsonify({"error": "La entrada no valida"}), 404
+            return jsonify({"error": "La entrada no es válida"}), 404
+            
         if ticket.is_used:
             # Si el ticket ya ha sido usado, respondemos con un error 400
-            return jsonify({"error": "La entrada ya ha usada"}), 400
+            return jsonify({"error": "La entrada ya ha sido usada"}), 400
 
         # Marcar el ticket como utilizado
         ticket.is_used = True
+        
+        # Verificar que el cambio se aplicó antes del commit
+        print(f"DEBUG: Antes del commit - is_used: {ticket.is_used}")
+        
+        # Hacer commit de los cambios
         db.session.commit()
+        
+        # Verificar que el cambio se guardó después del commit
+        print(f"DEBUG: Después del commit - is_used: {ticket.is_used}")
+        
+        # Refrescar el objeto desde la base de datos para asegurar que tenemos los datos más recientes
+        db.session.refresh(ticket)
+        
         return ticket_schema.jsonify(ticket), 200
+        
     except SQLAlchemyError as e:
         db.session.rollback()
+        print(f"DEBUG: Error de SQLAlchemy: {str(e)}")
         return jsonify({"error": "Database error occurred"}), 500
     except Exception as e:
         db.session.rollback()
+        print(f"DEBUG: Error general: {str(e)}")
         return jsonify({"error": str(e)}), 500
     finally:
         db.session.close()
