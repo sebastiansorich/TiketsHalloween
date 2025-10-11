@@ -29,5 +29,7 @@ typing_extensions==4.12.2
 urllib3==2.2.3
 Werkzeug==3.0.4
 unicorn==2.0.1
+psycopg2-binary==2.9.9
  flask-cors==5.0.0
+
 
