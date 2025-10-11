@@ -1,4 +1,4 @@
-#run.py
+#app.py
 from src import create_app
 #prueba
 app = create_app()
