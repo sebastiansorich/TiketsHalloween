@@ -206,7 +206,7 @@ def generate_qr(token):
     
 def generate_invitation_with_qr(token):
     try:
-        from PIL import Image, ImageFilter, ImageEnhance
+        from PIL import Image
         import qrcode, os, io
         from flask import send_file
 
@@ -247,20 +247,18 @@ def generate_invitation_with_qr(token):
         qr_size = (400, 400)
         qr_img = qr_img.resize(qr_size)
 
-        # 🔄 Rotar hacia el lado opuesto (5°)
-        rotation_angle = 5
-        qr_img = qr_img.rotate(rotation_angle, expand=True)
+        # 🔄 Rotar hacia el lado opuesto, con menor ángulo (5°)
+        qr_img = qr_img.rotate(5, expand=True)
 
         # 📍 Mover 20px a la derecha
-        qr_x = (background.width - qr_img.width) // 2 + 22
+        qr_x = (background.width - qr_img.width) // 2 + 20
         qr_y = int(background.height * 0.45)
 
-        # 🧩 QR con opacidad tipo "impreso"
-        qr_img.putalpha(180)
+        # 🧩 QR con opacidad tipo “impreso suave”
+        qr_img.putalpha(180)  # 0 = transparente, 255 = opaco
         background.alpha_composite(qr_img, (qr_x, qr_y))
 
-
-        # --- Guardar ---
+        # --- Guardar en memoria ---
         img_io = io.BytesIO()
         background.save(img_io, "PNG")
         img_io.seek(0)
