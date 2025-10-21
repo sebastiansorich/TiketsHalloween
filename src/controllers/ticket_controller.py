@@ -219,8 +219,9 @@ def generate_invitation_with_qr(token):
         )
         qr.add_data(token)
         qr.make(fit=True)
+        qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGBA")
 
-        # --- Cargar la imagen base ---
+        # --- Cargar imagen base ---
         base_dir = os.path.abspath(os.path.dirname(__file__))
         image_path = os.path.join(base_dir, '..', '..', 'static', 'invitation_background.png')
         background = Image.open(image_path).convert("RGBA")
@@ -239,36 +240,36 @@ def generate_invitation_with_qr(token):
             top = (bg_height - new_height) // 2
             background = background.crop((0, top, bg_width, top + new_height))
 
-        # --- Redimensionar a A6 (300 dpi aprox) ---
+        # --- Redimensionar ---
         background = background.resize((1240, 1754))
 
         # --- Tamaño y posición del QR ---
         qr_size = (400, 400)
+        qr_img = qr_img.resize(qr_size)
 
-        # 🔄 Rotar ligeramente hacia el lado opuesto (5°)
-        qr_img = qr_img.rotate(5, expand=True)
+        # 🔄 Rotar hacia el lado opuesto (5°)
+        rotation_angle = 5
+        qr_img = qr_img.rotate(rotation_angle, expand=True)
 
-        # 📍 Posicionar (20 px más a la derecha)
+        # 📍 Mover 20px a la derecha
         qr_x = (background.width - qr_img.width) // 2 + 22
         qr_y = int(background.height * 0.45)
 
-        # 💨 Crear sombra suave detrás del QR
+        # 💨 Crear sombra (rotada también)
         shadow = qr_img.copy()
-        shadow = shadow.convert("RGBA")
-        shadow = ImageEnhance.Brightness(shadow).enhance(0)  # volver negro
+        # volverla completamente negra
+        shadow = ImageEnhance.Brightness(shadow).enhance(0)
+        # difuminar sombra
         shadow = shadow.filter(ImageFilter.GaussianBlur(8))
 
-        # Pegar sombra primero (ligeramente desplazada)
+        # Pegar sombra antes, ligeramente desplazada
         background.alpha_composite(shadow, (qr_x + 8, qr_y + 8))
 
-        # 🧩 Ajustar opacidad del QR (efecto “impreso”)
-        alpha = 180  # 0 = transparente, 255 = opaco
-        qr_img.putalpha(alpha)
-
-        # Combinar el QR sobre el fondo
+        # 🧩 QR con opacidad tipo "impreso"
+        qr_img.putalpha(180)
         background.alpha_composite(qr_img, (qr_x, qr_y))
 
-        # 💾 Guardar en memoria
+        # --- Guardar ---
         img_io = io.BytesIO()
         background.save(img_io, "PNG")
         img_io.seek(0)
@@ -277,5 +278,4 @@ def generate_invitation_with_qr(token):
 
     except Exception as e:
         return {"error": f"An unexpected error occurred: {str(e)}"}, 500
-
 
