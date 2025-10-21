@@ -219,7 +219,6 @@ def generate_invitation_with_qr(token):
         )
         qr.add_data(token)
         qr.make(fit=True)
-        qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGBA")
 
         # --- Cargar la imagen base ---
         base_dir = os.path.abspath(os.path.dirname(__file__))
@@ -245,13 +244,12 @@ def generate_invitation_with_qr(token):
 
         # --- Tamaño y posición del QR ---
         qr_size = (400, 400)
-        qr_img = qr_img.resize(qr_size)
 
         # 🔄 Rotar ligeramente hacia el lado opuesto (5°)
         qr_img = qr_img.rotate(5, expand=True)
 
         # 📍 Posicionar (20 px más a la derecha)
-        qr_x = (background.width - qr_img.width) // 2 + 20
+        qr_x = (background.width - qr_img.width) // 2 + 22
         qr_y = int(background.height * 0.45)
 
         # 💨 Crear sombra suave detrás del QR
