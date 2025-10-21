@@ -269,6 +269,7 @@ def generate_invitation_with_qr(token):
         qr_img.putalpha(180)
         background.alpha_composite(qr_img, (qr_x, qr_y))
 
+
         # --- Guardar ---
         img_io = io.BytesIO()
         background.save(img_io, "PNG")
