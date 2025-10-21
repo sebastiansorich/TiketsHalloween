@@ -221,19 +221,17 @@ def generate_invitation_with_qr(token):
         qr.make(fit=True)
         qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGBA")
         
-        # Crear una máscara para hacer transparente solo el fondo blanco
-        # Convertir a numpy array para mejor control
-        import numpy as np
-        qr_array = np.array(qr_img)
-        
-        # Crear máscara: True donde el pixel es blanco (fondo)
-        white_mask = (qr_array[:, :, 0] == 255) & (qr_array[:, :, 1] == 255) & (qr_array[:, :, 2] == 255)
-        
-        # Hacer transparente solo el fondo blanco
-        qr_array[white_mask, 3] = 0  # Alpha = 0 (transparente)
-        
-        # Convertir de vuelta a PIL Image
-        qr_img = Image.fromarray(qr_array, 'RGBA')
+        # Hacer transparente solo el fondo blanco usando PIL
+        data = qr_img.getdata()
+        new_data = []
+        for item in data:
+            # Si el pixel es blanco (fondo), hacerlo transparente
+            if item[0] == 255 and item[1] == 255 and item[2] == 255:
+                new_data.append((255, 255, 255, 0))  # Transparente
+            else:
+                # Mantener el QR negro con opacidad completa
+                new_data.append((item[0], item[1], item[2], 255))
+        qr_img.putdata(new_data)
 
         # --- Cargar imagen base ---
         base_dir = os.path.abspath(os.path.dirname(__file__))
@@ -268,15 +266,9 @@ def generate_invitation_with_qr(token):
         qr_x = (background.width - qr_img.width) // 2 + 15  # Ajuste fino de posición horizontal
         qr_y = int(background.height * 0.42)  # Posición vertical más centrada
 
-        # 🧩 QR con opacidad natural - no modificar alpha si ya está bien
-        # Solo aplicar opacidad si es necesario
-        if qr_img.mode == 'RGBA':
-            # Ajustar opacidad solo ligeramente para mejor integración
-            qr_array = np.array(qr_img)
-            # Reducir opacidad de los píxeles negros del QR para suavizar
-            black_pixels = (qr_array[:, :, 0] < 255) & (qr_array[:, :, 1] < 255) & (qr_array[:, :, 2] < 255)
-            qr_array[black_pixels, 3] = np.minimum(qr_array[black_pixels, 3] * 0.8, 255).astype(np.uint8)
-            qr_img = Image.fromarray(qr_array, 'RGBA')
+        # 🧩 QR con opacidad suave para mejor integración
+        # Aplicar opacidad ligeramente reducida al QR
+        qr_img.putalpha(200)  # Opacidad suave
         
         background.alpha_composite(qr_img, (qr_x, qr_y))
 
@@ -289,4 +281,5 @@ def generate_invitation_with_qr(token):
 
     except Exception as e:
         return {"error": f"An unexpected error occurred: {str(e)}"}, 500
+
 
