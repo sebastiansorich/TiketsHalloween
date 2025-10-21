@@ -248,7 +248,7 @@ def generate_invitation_with_qr(token):
         qr_img = qr_img.resize(qr_size)
 
         # 🔄 Rotar en dirección opuesta (hacia la izquierda) sin fondo negro
-        qr_img = qr_img.rotate(7, expand=True, fillcolor=(255, 255, 255, 0))
+        qr_img = qr_img.rotate(5, expand=True, fillcolor=(255, 255, 255, 0))
 
         # 📍 Posicionar más a la derecha y hacia abajo
         qr_x = (background.width - qr_img.width) // 2 + 31
