@@ -215,19 +215,11 @@ def generate_invitation_with_qr(token):
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_H,
             box_size=10,
-            border=0,  # Sin borde para evitar problemas
+            border=2,
         )
         qr.add_data(token)
         qr.make(fit=True)
         qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGBA")
-        
-        # Método más simple: usar una máscara para hacer transparente el fondo blanco
-        # Convertir a modo L (escala de grises) para la máscara
-        mask = qr_img.convert('L')
-        # Crear una máscara donde blanco = transparente, negro = opaco
-        mask = mask.point(lambda x: 0 if x == 255 else 255, mode='1')
-        # Aplicar la máscara al canal alpha
-        qr_img.putalpha(mask)
 
         # --- Cargar imagen base ---
         base_dir = os.path.abspath(os.path.dirname(__file__))
@@ -255,17 +247,14 @@ def generate_invitation_with_qr(token):
         qr_size = (400, 400)
         qr_img = qr_img.resize(qr_size)
 
-        # 🔄 Rotar el QR en dirección opuesta (hacia la izquierda)
-        qr_img = qr_img.rotate(3, expand=True, fillcolor=(0, 0, 0, 0))
+        # 🔄 Rotar en dirección opuesta (hacia la izquierda) sin fondo negro
+        qr_img = qr_img.rotate(-5, expand=True, fillcolor=(255, 255, 255, 0))
 
-        # 📍 Posicionar el QR más a la derecha y hacia abajo
-        qr_x = (background.width - qr_img.width) // 2 + 31  # Más a la derecha
-        qr_y = int(background.height * 0.45)  # Más hacia abajo
+        # 📍 Posicionar más a la derecha y hacia abajo
+        qr_x = (background.width - qr_img.width) // 2 + 31
+        qr_y = int(background.height * 0.45)
 
-        # 🧩 QR con opacidad suave para mejor integración
-        # Aplicar opacidad ligeramente reducida al QR
-        qr_img.putalpha(200)  # Opacidad suave
-        
+        # 🧩 Combinar sin opacidad adicional
         background.alpha_composite(qr_img, (qr_x, qr_y))
 
         # --- Guardar en memoria ---
