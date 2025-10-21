@@ -255,16 +255,6 @@ def generate_invitation_with_qr(token):
         qr_x = (background.width - qr_img.width) // 2 + 22
         qr_y = int(background.height * 0.45)
 
-        # 💨 Crear sombra (rotada también)
-        shadow = qr_img.copy()
-        # volverla completamente negra
-        shadow = ImageEnhance.Brightness(shadow).enhance(0)
-        # difuminar sombra
-        shadow = shadow.filter(ImageFilter.GaussianBlur(8))
-
-        # Pegar sombra antes, ligeramente desplazada
-        background.alpha_composite(shadow, (qr_x + 8, qr_y + 8))
-
         # 🧩 QR con opacidad tipo "impreso"
         qr_img.putalpha(180)
         background.alpha_composite(qr_img, (qr_x, qr_y))
