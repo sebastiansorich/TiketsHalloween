@@ -247,11 +247,11 @@ def generate_invitation_with_qr(token):
         qr_size = (400, 400)
         qr_img = qr_img.resize(qr_size)
 
-        # 🔄 Rotar hacia el lado opuesto, con menor ángulo (5°)
-        qr_img = qr_img.rotate(5, expand=True, fillcolor=(255, 255, 255, 0))
+        # 🔄 Rotar hacia el lado opuesto, con menor ángulo (10°)
+        qr_img = qr_img.rotate(5, expand=True, fillcolor=(0, 0, 0, 0))
 
         # 📍 Mover 20px a la derecha
-        qr_x = (background.width - qr_img.width) // 2 + 20
+        qr_x = (background.width - qr_img.width) // 2 + 23
         qr_y = int(background.height * 0.45)
 
         # 🧩 QR con opacidad tipo “impreso suave”
