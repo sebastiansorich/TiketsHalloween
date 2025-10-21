@@ -215,11 +215,22 @@ def generate_invitation_with_qr(token):
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_H,
             box_size=10,
-            border=2,
+            border=0,  # Sin borde para evitar el fondo negro
         )
         qr.add_data(token)
         qr.make(fit=True)
         qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGBA")
+        
+        # Eliminar el fondo blanco del QR para que sea transparente
+        data = qr_img.getdata()
+        new_data = []
+        for item in data:
+            # Si el pixel es blanco (fondo), hacerlo transparente
+            if item[0] == 255 and item[1] == 255 and item[2] == 255:
+                new_data.append((255, 255, 255, 0))  # Transparente
+            else:
+                new_data.append(item)  # Mantener el QR negro
+        qr_img.putdata(new_data)
 
         # --- Cargar imagen base ---
         base_dir = os.path.abspath(os.path.dirname(__file__))
@@ -247,15 +258,15 @@ def generate_invitation_with_qr(token):
         qr_size = (400, 400)
         qr_img = qr_img.resize(qr_size)
 
-        # 🔄 Rotar hacia el lado opuesto, con menor ángulo (10°)
-        qr_img = qr_img.rotate(5, expand=True, fillcolor=(0, 0, 0, 0))
+        # 🔄 Rotar el QR con un ángulo más sutil para que se vea natural
+        qr_img = qr_img.rotate(-3, expand=True, fillcolor=(0, 0, 0, 0))
 
-        # 📍 Mover 20px a la derecha
-        qr_x = (background.width - qr_img.width) // 2 + 23
-        qr_y = int(background.height * 0.45)
+        # 📍 Posicionar el QR en el centro del área del credencial
+        qr_x = (background.width - qr_img.width) // 2 + 15  # Ajuste fino de posición horizontal
+        qr_y = int(background.height * 0.42)  # Posición vertical más centrada
 
-        # 🧩 QR con opacidad tipo “impreso suave”
-        qr_img.putalpha(180)  # 0 = transparente, 255 = opaco
+        # 🧩 QR con opacidad más natural para que se integre mejor
+        qr_img.putalpha(200)  # Opacidad ligeramente mayor para mejor visibilidad
         background.alpha_composite(qr_img, (qr_x, qr_y))
 
         # --- Guardar en memoria ---
