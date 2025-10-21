@@ -215,25 +215,19 @@ def generate_invitation_with_qr(token):
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_H,
             box_size=10,
-            border=1,  # Borde mínimo para evitar problemas
+            border=0,  # Sin borde para evitar problemas
         )
         qr.add_data(token)
         qr.make(fit=True)
         qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGBA")
         
-        # Crear una nueva imagen con fondo transparente
-        # En lugar de modificar píxeles, creamos una nueva imagen
-        transparent_qr = Image.new('RGBA', qr_img.size, (0, 0, 0, 0))
-        
-        # Copiar solo los píxeles negros del QR (no los blancos)
-        for x in range(qr_img.width):
-            for y in range(qr_img.height):
-                pixel = qr_img.getpixel((x, y))
-                # Si no es blanco (fondo), copiarlo
-                if not (pixel[0] == 255 and pixel[1] == 255 and pixel[2] == 255):
-                    transparent_qr.putpixel((x, y), pixel)
-        
-        qr_img = transparent_qr
+        # Método más simple: usar una máscara para hacer transparente el fondo blanco
+        # Convertir a modo L (escala de grises) para la máscara
+        mask = qr_img.convert('L')
+        # Crear una máscara donde blanco = transparente, negro = opaco
+        mask = mask.point(lambda x: 0 if x == 255 else 255, mode='1')
+        # Aplicar la máscara al canal alpha
+        qr_img.putalpha(mask)
 
         # --- Cargar imagen base ---
         base_dir = os.path.abspath(os.path.dirname(__file__))
@@ -265,7 +259,7 @@ def generate_invitation_with_qr(token):
         qr_img = qr_img.rotate(3, expand=True, fillcolor=(0, 0, 0, 0))
 
         # 📍 Posicionar el QR más a la derecha y hacia abajo
-        qr_x = (background.width - qr_img.width) // 2 + 30  # Más a la derecha
+        qr_x = (background.width - qr_img.width) // 2 + 31  # Más a la derecha
         qr_y = int(background.height * 0.45)  # Más hacia abajo
 
         # 🧩 QR con opacidad suave para mejor integración
