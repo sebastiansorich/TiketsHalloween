@@ -215,45 +215,33 @@ def generate_invitation_with_qr(token):
         )
         qr.add_data(token)
         qr.make(fit=True)
-        qr_img = qr.make_image(fill_color="black", back_color="white")
+        qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGBA")
+        qr_img.putalpha(245)
 
         # Cargar la imagen base
         base_dir = os.path.abspath(os.path.dirname(__file__))
         image_path = os.path.join(base_dir, '..', '..', 'static', 'invitation_background.png')
-        background = Image.open(image_path)
+        background = Image.open(image_path).convert("RGBA")
 
-        # --- 🔧 Ajustar proporción de fondo automáticamente ---
-        desired_ratio = 3 / 4  # Relación vertical recomendada
-        bg_width, bg_height = background.size
-        current_ratio = bg_width / bg_height
-
-        if current_ratio > desired_ratio:
-            # Recortar los lados
-            new_width = int(bg_height * desired_ratio)
-            left = (bg_width - new_width) // 2
-            background = background.crop((left, 0, left + new_width, bg_height))
-        else:
-            # Recortar arriba y abajo
-            new_height = int(bg_width / desired_ratio)
-            top = (bg_height - new_height) // 2
-            background = background.crop((0, top, bg_width, top + new_height))
-
-        # --- 📏 Redimensionar a tamaño ideal (A6 a 300 dpi ≈ 1240x1754 px) ---
-        background = background.resize((1240, 1754))
-
-        # --- 📱 Tamaño y posición del QR ---
+        # --- 📏 Redimensionar QR ---
         qr_size = (400, 400)
         qr_img = qr_img.resize(qr_size)
 
-        qr_x = (background.width - qr_size[0]) // 2
-        qr_y = int(background.height * 0.45)  # Centrado ligeramente hacia arriba
+        # --- 🔄 Rotar QR ligeramente (para alinearlo con la credencial) ---
+        # Puedes ajustar el ángulo: valores entre -8 y -12 suelen verse naturales
+        qr_img = qr_img.rotate(-10, expand=True)
 
-        # --- 🧩 Combinar QR con fondo ---
-        background.paste(qr_img, (qr_x, qr_y))
+        # --- 📍 Calcular posición (ligeramente más abajo y centrado) ---
+        bg_width, bg_height = background.size
+        qr_x = (bg_width - qr_img.width) // 2 + 5   # mover un poco a la derecha
+        qr_y = int(bg_height * 0.57)                # mover un poco hacia abajo
 
-        # --- 💾 Guardar en memoria y devolver ---
+        # --- 🧩 Combinar con transparencia ---
+        background.alpha_composite(qr_img, (qr_x, qr_y))
+
+        # --- 💾 Guardar imagen final ---
         img_io = io.BytesIO()
-        background.save(img_io, 'PNG')
+        background.convert("RGB").save(img_io, "PNG")
         img_io.seek(0)
 
         return send_file(img_io, mimetype='image/png')
