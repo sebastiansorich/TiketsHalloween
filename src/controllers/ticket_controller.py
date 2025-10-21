@@ -221,17 +221,19 @@ def generate_invitation_with_qr(token):
         qr.make(fit=True)
         qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGBA")
         
-        # Hacer transparente solo el fondo blanco usando PIL
-        data = qr_img.getdata()
-        new_data = []
-        for item in data:
-            # Si el pixel es blanco (fondo), hacerlo transparente
-            if item[0] == 255 and item[1] == 255 and item[2] == 255:
-                new_data.append((255, 255, 255, 0))  # Transparente
-            else:
-                # Mantener el QR negro con opacidad completa
-                new_data.append((item[0], item[1], item[2], 255))
-        qr_img.putdata(new_data)
+        # Crear una nueva imagen con fondo transparente
+        # En lugar de modificar píxeles, creamos una nueva imagen
+        transparent_qr = Image.new('RGBA', qr_img.size, (0, 0, 0, 0))
+        
+        # Copiar solo los píxeles negros del QR (no los blancos)
+        for x in range(qr_img.width):
+            for y in range(qr_img.height):
+                pixel = qr_img.getpixel((x, y))
+                # Si no es blanco (fondo), copiarlo
+                if not (pixel[0] == 255 and pixel[1] == 255 and pixel[2] == 255):
+                    transparent_qr.putpixel((x, y), pixel)
+        
+        qr_img = transparent_qr
 
         # --- Cargar imagen base ---
         base_dir = os.path.abspath(os.path.dirname(__file__))
@@ -259,12 +261,12 @@ def generate_invitation_with_qr(token):
         qr_size = (400, 400)
         qr_img = qr_img.resize(qr_size)
 
-        # 🔄 Rotar el QR con un ángulo más sutil para que se vea natural
-        qr_img = qr_img.rotate(-3, expand=True, fillcolor=(0, 0, 0, 0))
+        # 🔄 Rotar el QR en dirección opuesta (hacia la izquierda)
+        qr_img = qr_img.rotate(3, expand=True, fillcolor=(0, 0, 0, 0))
 
-        # 📍 Posicionar el QR en el centro del área del credencial
-        qr_x = (background.width - qr_img.width) // 2 + 15  # Ajuste fino de posición horizontal
-        qr_y = int(background.height * 0.42)  # Posición vertical más centrada
+        # 📍 Posicionar el QR más a la derecha y hacia abajo
+        qr_x = (background.width - qr_img.width) // 2 + 30  # Más a la derecha
+        qr_y = int(background.height * 0.45)  # Más hacia abajo
 
         # 🧩 QR con opacidad suave para mejor integración
         # Aplicar opacidad ligeramente reducida al QR
@@ -281,5 +283,4 @@ def generate_invitation_with_qr(token):
 
     except Exception as e:
         return {"error": f"An unexpected error occurred: {str(e)}"}, 500
-
 
