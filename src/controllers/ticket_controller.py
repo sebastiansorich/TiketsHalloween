@@ -240,19 +240,19 @@ def generate_invitation_with_qr(token):
             top = (bg_height - new_height) // 2
             background = background.crop((0, top, bg_width, top + new_height))
 
-        # --- Redimensionar a un tamaño más grande para que quepa el texto ---
-        background = background.resize((1200, 1800))  # Aumentado para texto grande
+        # --- Redimensionar ---
+        background = background.resize((1240, 1754))
 
         # --- Tamaño y posición del QR ---
-        qr_size = (300, 300)  # Reducido para que no tape el texto
+        qr_size = (400, 400)
         qr_img = qr_img.resize(qr_size)
 
         # 🔄 Rotar en dirección opuesta (hacia la izquierda) sin fondo negro
         qr_img = qr_img.rotate(5, expand=True, fillcolor=(255, 255, 255, 0))
 
-        # 📍 Posicionar el QR más abajo para dar espacio al texto
-        qr_x = (background.width - qr_img.width) // 2
-        qr_y = int(background.height * 0.6)  # Más abajo para texto grande
+        # 📍 Posicionar más a la derecha y hacia abajo
+        qr_x = (background.width - qr_img.width) // 2 + 31
+        qr_y = int(background.height * 0.45)
 
         # 🧩 Combinar sin opacidad adicional
         background.alpha_composite(qr_img, (qr_x, qr_y))
@@ -260,22 +260,36 @@ def generate_invitation_with_qr(token):
         # --- Agregar texto ---
         draw = ImageDraw.Draw(background)
         
-        # Intentar cargar una fuente personalizada, si no está disponible usar la por defecto
-        try:
-            # Buscar fuentes del sistema que se parezcan al estilo del arte
-            font_large = ImageFont.truetype("arial.ttf", 600)   # Título más grande
-            font_medium = ImageFont.truetype("arial.ttf", 400)  # Fecha mediana
-            font_small = ImageFont.truetype("arial.ttf", 250)   # Aviso pequeño
-        except:
+        # Cargar fuentes - probamos múltiples ubicaciones
+        font_large = None
+        font_medium = None
+        font_small = None
+        
+        # Lista de fuentes a probar
+        font_paths = [
+            "C:/Windows/Fonts/arial.ttf",
+            "C:/Windows/Fonts/Arial.ttf",
+            "C:/Windows/Fonts/calibri.ttf",
+            "C:/Windows/Fonts/verdana.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "arial.ttf"
+        ]
+        
+        for font_path in font_paths:
             try:
-                font_large = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 600)
-                font_medium = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 400)
-                font_small = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 250)
+                font_large = ImageFont.truetype(font_path, 100)
+                font_medium = ImageFont.truetype(font_path, 60)
+                font_small = ImageFont.truetype(font_path, 35)
+                break  # Si funciona, salir del bucle
             except:
-                # Fuente por defecto si no se encuentra arial
-                font_large = ImageFont.load_default()
-                font_medium = ImageFont.load_default()
-                font_small = ImageFont.load_default()
+                continue
+        
+        # Si no se encontró ninguna fuente, usar una fuente por defecto más grande
+        if font_large is None:
+            # Crear una fuente desde PIL que sí acepta tamaños
+            font_large = ImageFont.load_default()
+            font_medium = ImageFont.load_default()
+            font_small = ImageFont.load_default()
 
         # --- Texto "URUBO WEST" ---
         title_text = "URUBO WEST"
