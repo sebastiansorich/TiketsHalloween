@@ -223,7 +223,7 @@ def generate_invitation_with_qr(token):
 
         # --- Cargar imagen base ---
         base_dir = os.path.abspath(os.path.dirname(__file__))
-        image_path = os.path.join(base_dir, '..', '..', 'static', 'invitation_background.png')
+        image_path = os.path.join(base_dir, '..', '..', 'static', 'Artesinlogos.png')
         background = Image.open(image_path).convert("RGBA")
 
         # --- Ajustar proporción ---
@@ -244,14 +244,14 @@ def generate_invitation_with_qr(token):
         background = background.resize((1240, 1754))
 
         # --- Tamaño y posición del QR ---
-        qr_size = (380, 380)
+        qr_size = (300, 300)
         qr_img = qr_img.resize(qr_size)
 
         # 🔄 Rotar en dirección opuesta (hacia la izquierda) sin fondo negro
-        qr_img = qr_img.rotate(4, expand=True, fillcolor=(255, 255, 255, 0))
+        qr_img = qr_img.rotate(0, expand=True, fillcolor=(255, 255, 255, 0))
 
         # 📍 Posicionar más a la derecha y hacia abajo
-        qr_x = (background.width - qr_img.width) // 2 + 31
+        qr_x = (background.width - qr_img.width) // 2 + 28
         qr_y = int(background.height * 0.50)
 
         # 🧩 Combinar sin opacidad adicional
