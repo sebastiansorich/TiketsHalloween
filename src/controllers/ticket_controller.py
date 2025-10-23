@@ -240,19 +240,19 @@ def generate_invitation_with_qr(token):
             top = (bg_height - new_height) // 2
             background = background.crop((0, top, bg_width, top + new_height))
 
-        # --- Redimensionar ---
-        background = background.resize((1240, 1754))
+        # --- Redimensionar a un tamaño más manejable ---
+        background = background.resize((800, 1200))  # Reducido para mejor visualización
 
         # --- Tamaño y posición del QR ---
-        qr_size = (400, 400)
+        qr_size = (300, 300)  # Reducido para que no tape el texto
         qr_img = qr_img.resize(qr_size)
 
         # 🔄 Rotar en dirección opuesta (hacia la izquierda) sin fondo negro
         qr_img = qr_img.rotate(5, expand=True, fillcolor=(255, 255, 255, 0))
 
-        # 📍 Posicionar más a la derecha y hacia abajo
-        qr_x = (background.width - qr_img.width) // 2 + 31
-        qr_y = int(background.height * 0.45)
+        # 📍 Posicionar el QR más abajo para no tapar el texto
+        qr_x = (background.width - qr_img.width) // 2
+        qr_y = int(background.height * 0.6)  # Más abajo
 
         # 🧩 Combinar sin opacidad adicional
         background.alpha_composite(qr_img, (qr_x, qr_y))
@@ -282,12 +282,12 @@ def generate_invitation_with_qr(token):
         title_bbox = draw.textbbox((0, 0), title_text, font=font_large)
         title_width = title_bbox[2] - title_bbox[0]
         title_x = (background.width - title_width) // 2
-        title_y = int(background.height * 0.15)
+        title_y = int(background.height * 0.05)  # Más arriba
         
         # Dibujar texto con efecto de sombra para simular el estilo del arte
-        shadow_offset = 3
+        shadow_offset = 5  # Sombra más grande
         draw.text((title_x + shadow_offset, title_y + shadow_offset), title_text, 
-                 font=font_large, fill=(0, 0, 0, 180))  # Sombra negra
+                 font=font_large, fill=(0, 0, 0, 200))  # Sombra más oscura
         draw.text((title_x, title_y), title_text, 
                  font=font_large, fill=(255, 255, 255, 255))  # Texto blanco
 
@@ -296,10 +296,10 @@ def generate_invitation_with_qr(token):
         date_bbox = draw.textbbox((0, 0), date_text, font=font_medium)
         date_width = date_bbox[2] - date_bbox[0]
         date_x = (background.width - date_width) // 2
-        date_y = title_y + 100
+        date_y = title_y + 150  # Más separado del título
         
         draw.text((date_x + shadow_offset, date_y + shadow_offset), date_text, 
-                 font=font_medium, fill=(0, 0, 0, 180))  # Sombra
+                 font=font_medium, fill=(0, 0, 0, 200))  # Sombra más oscura
         draw.text((date_x, date_y), date_text, 
                  font=font_medium, fill=(255, 255, 255, 255))  # Texto blanco
 
