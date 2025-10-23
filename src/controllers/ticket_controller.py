@@ -207,7 +207,7 @@ def generate_qr(token):
 def generate_invitation_with_qr(token):
     try:
         from PIL import Image, ImageDraw, ImageFont
-        import qrcode, os, io, random
+        import qrcode, os, io
         from flask import send_file
 
         # --- Crear el código QR ---
@@ -223,7 +223,7 @@ def generate_invitation_with_qr(token):
 
         # --- Cargar imagen base ---
         base_dir = os.path.abspath(os.path.dirname(__file__))
-        image_path = os.path.join(base_dir, '..', '..', 'static', 'Arteconlogo.png')
+        image_path = os.path.join(base_dir, '..', '..', 'static', 'invitation_background.png')
         background = Image.open(image_path).convert("RGBA")
 
         # --- Ajustar proporción ---
@@ -244,144 +244,110 @@ def generate_invitation_with_qr(token):
         background = background.resize((1240, 1754))
 
         # --- Tamaño y posición del QR ---
-        qr_size = (300, 300)
+        qr_size = (380, 380)
         qr_img = qr_img.resize(qr_size)
 
-        # 🔄 Rotar ligeramente para dar efecto natural
-        qr_img = qr_img.rotate(0, expand=True, fillcolor=(255, 255, 255, 0))
+        # 🔄 Rotar en dirección opuesta (hacia la izquierda) sin fondo negro
+        qr_img = qr_img.rotate(6, expand=True, fillcolor=(255, 255, 255, 0))
 
-        # 📍 Centrar el QR entre la mano de Chucky y el título "URUBO WEST"
-        # Ajustado para que quede en el espacio perfecto
-        qr_x = (background.width - qr_img.width) // 2 + 15  # Ligeramente a la derecha
-        qr_y = int(background.height * 0.48)  # 48% de altura - más arriba
+        # 📍 Posicionar más a la derecha y hacia abajo
+        qr_x = (background.width - qr_img.width) // 2 + 31
+        qr_y = int(background.height * 0.50)
 
-        # --- Crear efecto de sangre detrás del QR 🩸 ---
-        blood_layer = Image.new('RGBA', background.size, (0, 0, 0, 0))
-        blood_draw = ImageDraw.Draw(blood_layer)
-        
-        # Crear manchas de sangre detrás del QR
-        blood_color = (139, 0, 0, 120)  # Rojo oscuro semi-transparente
-        
-        # Posición del QR (antes de rotarlo)
-        qr_center_x = qr_x + qr_img.width // 2
-        qr_center_y = qr_y + qr_img.height // 2
-        
-        # Dibujar varias manchas de sangre alrededor del QR
-        for i in range(8):
-            offset_x = random.randint(-30, 30)
-            offset_y = random.randint(-30, 30)
-            size = random.randint(40, 80)
-            blood_draw.ellipse([
-                qr_center_x + offset_x - size//2,
-                qr_center_y + offset_y - size//2,
-                qr_center_x + offset_x + size//2,
-                qr_center_y + offset_y + size//2
-            ], fill=blood_color)
-        
-        # Agregar gotas de sangre (efecto de salpicadura)
-        for i in range(5):
-            x = qr_center_x + random.randint(-80, 80)
-            y = qr_center_y + random.randint(50, 120)  # Abajo del QR
-            drip_size = random.randint(8, 15)
-            blood_draw.ellipse([x - drip_size//2, y, x + drip_size//2, y + drip_size*2], fill=blood_color)
-        
-        # Combinar capa de sangre con el fondo
-        background = Image.alpha_composite(background, blood_layer)
-        
-        # 🧩 Combinar QR encima de la sangre
+        # 🧩 Combinar sin opacidad adicional
         background.alpha_composite(qr_img, (qr_x, qr_y))
 
-        # --- Agregar texto (COMENTADO - Ya está en la imagen de fondo) ---
-        # draw = ImageDraw.Draw(background)
+        # --- Agregar texto ---
+        draw = ImageDraw.Draw(background)
         
-        # # Cargar fuentes - probamos múltiples ubicaciones
-        # font_large = None
-        # font_medium = None
-        # font_small = None
+        # Cargar fuentes - probamos múltiples ubicaciones
+        font_large = None
+        font_medium = None
+        font_small = None
         
-        # # Obtener directorio del proyecto
-        # project_dir = os.path.abspath(os.path.join(base_dir, '..', '..'))
+        # Obtener directorio del proyecto
+        project_dir = os.path.abspath(os.path.join(base_dir, '..', '..'))
         
-        # # Lista de fuentes a probar (incluye ruta del proyecto)
-        # # Primero intenta cargar fuentes personalizadas de terror/horror
-        # font_paths = [
-        #     os.path.join(project_dir, 'static', 'fonts', 'Horror.ttf'),
-        #     os.path.join(project_dir, 'static', 'fonts', 'Creepster.ttf'),
-        #     os.path.join(project_dir, 'static', 'fonts', 'Arial-Bold.ttf'),
-        #     os.path.join(project_dir, 'static', 'fonts', 'Arial.ttf'),
-        #     "C:/Windows/Fonts/ariblk.ttf",  # Arial Black (más gruesa)
-        #     "C:/Windows/Fonts/arialbd.ttf",  # Arial Bold
-        #     "C:/Windows/Fonts/arial.ttf",
-        #     "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        #     "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        #     "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-        #     "/System/Library/Fonts/Helvetica.ttc",
-        #     "arial.ttf"
-        # ]
+        # Lista de fuentes a probar (incluye ruta del proyecto)
+        # Primero intenta cargar fuentes personalizadas de terror/horror
+        font_paths = [
+            os.path.join(project_dir, 'static', 'fonts', 'Horror.ttf'),
+            os.path.join(project_dir, 'static', 'fonts', 'Creepster.ttf'),
+            os.path.join(project_dir, 'static', 'fonts', 'Arial-Bold.ttf'),
+            os.path.join(project_dir, 'static', 'fonts', 'Arial.ttf'),
+            "C:/Windows/Fonts/ariblk.ttf",  # Arial Black (más gruesa)
+            "C:/Windows/Fonts/arialbd.ttf",  # Arial Bold
+            "C:/Windows/Fonts/arial.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+            "/System/Library/Fonts/Helvetica.ttc",
+            "arial.ttf"
+        ]
         
-        # for font_path in font_paths:
-        #     try:
-        #         # Tamaños más grandes
-        #         font_large = ImageFont.truetype(font_path, 90)
-        #         font_medium = ImageFont.truetype(font_path, 55)
-        #         font_small = ImageFont.truetype(font_path, 32)
-        #         print(f"✓ Fuente cargada: {font_path}")  # Debug
-        #         break  # Si funciona, salir del bucle
-        #     except Exception as e:
-        #         continue
+        for font_path in font_paths:
+            try:
+                # Tamaños más grandes
+                font_large = ImageFont.truetype(font_path, 90)
+                font_medium = ImageFont.truetype(font_path, 55)
+                font_small = ImageFont.truetype(font_path, 32)
+                print(f"✓ Fuente cargada: {font_path}")  # Debug
+                break  # Si funciona, salir del bucle
+            except Exception as e:
+                continue
         
-        # # Si no se encontró ninguna fuente, usar load_default
-        # if font_large is None:
-        #     print("⚠ No se encontró fuente TrueType, usando fuente por defecto")  # Debug
-        #     font_large = ImageFont.load_default()
-        #     font_medium = ImageFont.load_default()
-        #     font_small = ImageFont.load_default()
+        # Si no se encontró ninguna fuente, usar load_default
+        if font_large is None:
+            print("⚠ No se encontró fuente TrueType, usando fuente por defecto")  # Debug
+            font_large = ImageFont.load_default()
+            font_medium = ImageFont.load_default()
+            font_small = ImageFont.load_default()
 
-        # # --- Texto "URUBO WEST" ---
-        # title_text = "URUBO WEST"
-        # title_bbox = draw.textbbox((0, 0), title_text, font=font_large)
-        # title_width = title_bbox[2] - title_bbox[0]
-        # title_x = (background.width - title_width) // 2
-        # title_y = 80
+        # --- Texto "URUBO WEST" ---
+        title_text = "URUBO WEST"
+        title_bbox = draw.textbbox((0, 0), title_text, font=font_large)
+        title_width = title_bbox[2] - title_bbox[0]
+        title_x = (background.width - title_width) // 2
+        title_y = 80
         
-        # # Dibujar texto con efecto de sombra para simular el estilo del arte
-        # shadow_offset = 4
-        # draw.text((title_x + shadow_offset, title_y + shadow_offset), title_text, 
-        #          font=font_large, fill=(0, 0, 0, 200))  # Sombra más oscura
-        # draw.text((title_x, title_y), title_text, 
-        #          font=font_large, fill=(255, 255, 255, 255))  # Texto blanco
+        # Dibujar texto con efecto de sombra para simular el estilo del arte
+        shadow_offset = 4
+        draw.text((title_x + shadow_offset, title_y + shadow_offset), title_text, 
+                 font=font_large, fill=(0, 0, 0, 200))  # Sombra más oscura
+        draw.text((title_x, title_y), title_text, 
+                 font=font_large, fill=(255, 255, 255, 255))  # Texto blanco
 
-        # # --- Fecha de la fiesta ---
-        # date_text = "1º de noviembre"
-        # date_bbox = draw.textbbox((0, 0), date_text, font=font_medium)
-        # date_width = date_bbox[2] - date_bbox[0]
-        # date_x = (background.width - date_width) // 2
-        # date_y = title_y + 120
+        # --- Fecha de la fiesta ---
+        date_text = "1º de noviembre"
+        date_bbox = draw.textbbox((0, 0), date_text, font=font_medium)
+        date_width = date_bbox[2] - date_bbox[0]
+        date_x = (background.width - date_width) // 2
+        date_y = title_y + 120
         
-        # draw.text((date_x + shadow_offset, date_y + shadow_offset), date_text, 
-        #          font=font_medium, fill=(0, 0, 0, 200))  # Sombra más oscura
-        # draw.text((date_x, date_y), date_text, 
-        #          font=font_medium, fill=(255, 255, 255, 255))  # Texto blanco
+        draw.text((date_x + shadow_offset, date_y + shadow_offset), date_text, 
+                 font=font_medium, fill=(0, 0, 0, 200))  # Sombra más oscura
+        draw.text((date_x, date_y), date_text, 
+                 font=font_medium, fill=(255, 255, 255, 255))  # Texto blanco
 
-        # # --- Aviso sobre unicidad del ticket ---
-        # warning_text = "Este ticket es único y personal. Debe cuidarse y no compartirse."
-        # warning_bbox = draw.textbbox((0, 0), warning_text, font=font_small)
-        # warning_width = warning_bbox[2] - warning_bbox[0]
-        # warning_x = (background.width - warning_width) // 2
-        # warning_y = background.height - 120
+        # --- Aviso sobre unicidad del ticket ---
+        warning_text = "Este ticket es único y personal. Debe cuidarse y no compartirse."
+        warning_bbox = draw.textbbox((0, 0), warning_text, font=font_small)
+        warning_width = warning_bbox[2] - warning_bbox[0]
+        warning_x = (background.width - warning_width) // 2
+        warning_y = background.height - 120
         
-        # # Fondo semi-transparente para el aviso
-        # padding = 15
-        # warning_rect = [
-        #     warning_x - padding, 
-        #     warning_y - padding, 
-        #     warning_x + warning_width + padding, 
-        #     warning_y + 45 + padding
-        # ]
-        # draw.rectangle(warning_rect, fill=(0, 0, 0, 180))
+        # Fondo semi-transparente para el aviso
+        padding = 15
+        warning_rect = [
+            warning_x - padding, 
+            warning_y - padding, 
+            warning_x + warning_width + padding, 
+            warning_y + 45 + padding
+        ]
+        draw.rectangle(warning_rect, fill=(0, 0, 0, 180))
         
-        # draw.text((warning_x, warning_y), warning_text, 
-        #          font=font_small, fill=(255, 255, 255, 255))
+        draw.text((warning_x, warning_y), warning_text, 
+                 font=font_small, fill=(255, 255, 255, 255))
 
         # --- Guardar en memoria ---
         img_io = io.BytesIO()
@@ -391,5 +357,4 @@ def generate_invitation_with_qr(token):
         return send_file(img_io, mimetype="image/png")
 
     except Exception as e:
-        return {"error": f"An unexpected error occurred: {str(e)}"}, 500
-
+        return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
