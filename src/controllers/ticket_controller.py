@@ -269,11 +269,15 @@ def generate_invitation_with_qr(token):
         project_dir = os.path.abspath(os.path.join(base_dir, '..', '..'))
         
         # Lista de fuentes a probar (incluye ruta del proyecto)
+        # Primero intenta cargar fuentes personalizadas de terror/horror
         font_paths = [
-            os.path.join(project_dir, 'fonts', 'Arial.ttf'),
+            os.path.join(project_dir, 'static', 'fonts', 'Horror.ttf'),
+            os.path.join(project_dir, 'static', 'fonts', 'Creepster.ttf'),
+            os.path.join(project_dir, 'static', 'fonts', 'Arial-Bold.ttf'),
             os.path.join(project_dir, 'static', 'fonts', 'Arial.ttf'),
+            "C:/Windows/Fonts/ariblk.ttf",  # Arial Black (más gruesa)
+            "C:/Windows/Fonts/arialbd.ttf",  # Arial Bold
             "C:/Windows/Fonts/arial.ttf",
-            "C:/Windows/Fonts/Arial.ttf",
             "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
             "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
             "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
