@@ -252,7 +252,7 @@ def generate_invitation_with_qr(token):
 
         # 📍 Posicionar más a la derecha y hacia abajo
         qr_x = (background.width - qr_img.width) // 2 + 31
-        qr_y = int(background.height * 0.35)
+        qr_y = int(background.height * 0.65)
 
         # 🧩 Combinar sin opacidad adicional
         background.alpha_composite(qr_img, (qr_x, qr_y))
