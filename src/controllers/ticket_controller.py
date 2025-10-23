@@ -240,8 +240,8 @@ def generate_invitation_with_qr(token):
             top = (bg_height - new_height) // 2
             background = background.crop((0, top, bg_width, top + new_height))
 
-        # --- Redimensionar a un tamaño más manejable ---
-        background = background.resize((800, 1200))  # Reducido para mejor visualización
+        # --- Redimensionar a un tamaño más grande para que quepa el texto ---
+        background = background.resize((1200, 1800))  # Aumentado para texto grande
 
         # --- Tamaño y posición del QR ---
         qr_size = (300, 300)  # Reducido para que no tape el texto
@@ -250,9 +250,9 @@ def generate_invitation_with_qr(token):
         # 🔄 Rotar en dirección opuesta (hacia la izquierda) sin fondo negro
         qr_img = qr_img.rotate(5, expand=True, fillcolor=(255, 255, 255, 0))
 
-        # 📍 Posicionar el QR en el centro
+        # 📍 Posicionar el QR más abajo para dar espacio al texto
         qr_x = (background.width - qr_img.width) // 2
-        qr_y = int(background.height * 0.5)  # Centro de la imagen
+        qr_y = int(background.height * 0.6)  # Más abajo para texto grande
 
         # 🧩 Combinar sin opacidad adicional
         background.alpha_composite(qr_img, (qr_x, qr_y))
@@ -282,10 +282,10 @@ def generate_invitation_with_qr(token):
         title_bbox = draw.textbbox((0, 0), title_text, font=font_large)
         title_width = title_bbox[2] - title_bbox[0]
         title_x = (background.width - title_width) // 2
-        title_y = 50  # Posición fija desde arriba
+        title_y = 100  # Más espacio desde arriba
         
         # Dibujar texto con efecto de sombra para simular el estilo del arte
-        shadow_offset = 3
+        shadow_offset = 5
         draw.text((title_x + shadow_offset, title_y + shadow_offset), title_text, 
                  font=font_large, fill=(0, 0, 0, 200))  # Sombra más oscura
         draw.text((title_x, title_y), title_text, 
@@ -296,7 +296,7 @@ def generate_invitation_with_qr(token):
         date_bbox = draw.textbbox((0, 0), date_text, font=font_medium)
         date_width = date_bbox[2] - date_bbox[0]
         date_x = (background.width - date_width) // 2
-        date_y = title_y + 80  # Más cerca del título
+        date_y = title_y + 200  # Más separado para texto grande
         
         draw.text((date_x + shadow_offset, date_y + shadow_offset), date_text, 
                  font=font_medium, fill=(0, 0, 0, 200))  # Sombra más oscura
@@ -308,15 +308,15 @@ def generate_invitation_with_qr(token):
         warning_bbox = draw.textbbox((0, 0), warning_text, font=font_small)
         warning_width = warning_bbox[2] - warning_bbox[0]
         warning_x = (background.width - warning_width) // 2
-        warning_y = background.height - 100  # Posición fija desde abajo
+        warning_y = background.height - 150  # Más espacio desde abajo
         
         # Fondo semi-transparente para el aviso
-        padding = 15
+        padding = 20
         warning_rect = [
             warning_x - padding, 
             warning_y - padding, 
             warning_x + warning_width + padding, 
-            warning_y + 30 + padding
+            warning_y + 50 + padding
         ]
         draw.rectangle(warning_rect, fill=(0, 0, 0, 180))
         
