@@ -223,7 +223,7 @@ def generate_invitation_with_qr(token):
 
         # --- Cargar imagen base ---
         base_dir = os.path.abspath(os.path.dirname(__file__))
-        image_path = os.path.join(base_dir, '..', '..', 'static', 'invitation_background.png')
+        image_path = os.path.join(base_dir, '..', '..', 'static', 'Arteconlogo.png')
         background = Image.open(image_path).convert("RGBA")
 
         # --- Ajustar proporción ---
