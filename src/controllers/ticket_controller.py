@@ -252,7 +252,7 @@ def generate_invitation_with_qr(token):
 
         # 📍 Posicionar más a la derecha y hacia abajo
         qr_x = (background.width - qr_img.width) // 2 + 25
-        qr_y = int(background.height * 0.30)
+        qr_y = int(background.height * 0.70)
 
         # 🧩 Combinar sin opacidad adicional
         background.alpha_composite(qr_img, (qr_x, qr_y))
@@ -303,25 +303,7 @@ def generate_invitation_with_qr(token):
             font_medium = ImageFont.load_default()
             font_small = ImageFont.load_default()
             
-        # --- Aviso sobre unicidad del ticket ---
-        warning_text = "Este ticket es único y personal. Debe cuidarse y no compartirse."
-        warning_bbox = draw.textbbox((0, 0), warning_text, font=font_small)
-        warning_width = warning_bbox[2] - warning_bbox[0]
-        warning_x = (background.width - warning_width) // 2
-        warning_y = background.height - 120
-        
-        # Fondo semi-transparente para el aviso
-        padding = 15
-        warning_rect = [
-            warning_x - padding, 
-            warning_y - padding, 
-            warning_x + warning_width + padding, 
-            warning_y + 45 + padding
-        ]
-        draw.rectangle(warning_rect, fill=(0, 0, 0, 180))
-        
-        draw.text((warning_x, warning_y), warning_text, 
-                 font=font_small, fill=(255, 255, 255, 255))
+
 
         # --- Guardar en memoria ---
         img_io = io.BytesIO()
