@@ -268,9 +268,9 @@ def generate_invitation_with_qr(token):
             font_small = ImageFont.truetype("arial.ttf", 250)   # Aviso pequeño
         except:
             try:
-                font_large = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 60)
-                font_medium = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 40)
-                font_small = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 25)
+                font_large = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 600)
+                font_medium = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 400)
+                font_small = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 250)
             except:
                 # Fuente por defecto si no se encuentra arial
                 font_large = ImageFont.load_default()
