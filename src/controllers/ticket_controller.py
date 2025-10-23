@@ -247,12 +247,13 @@ def generate_invitation_with_qr(token):
         qr_size = (400, 400)
         qr_img = qr_img.resize(qr_size)
 
-        # 🔄 Rotar en dirección opuesta (hacia la izquierda) sin fondo negro
-        qr_img = qr_img.rotate(6, expand=True, fillcolor=(255, 255, 255, 0))
+        # 🔄 Rotar ligeramente para simular naturalidad
+        qr_img = qr_img.rotate(3, expand=True, fillcolor=(255, 255, 255, 0))
 
-        # 📍 Posicionar más a la derecha y hacia abajo
-        qr_x = (background.width - qr_img.width) // 2 + 34
-        qr_y = int(background.height * 0.50)
+        # 📍 Centrar el QR dentro de la credencial de Chucky
+        # La credencial está centrada horizontalmente y en la parte media-baja
+        qr_x = (background.width - qr_img.width) // 2  # Perfectamente centrado
+        qr_y = int(background.height * 0.52)  # 52% de altura (ajustable)
 
         # 🧩 Combinar sin opacidad adicional
         background.alpha_composite(qr_img, (qr_x, qr_y))
