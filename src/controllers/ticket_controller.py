@@ -265,28 +265,36 @@ def generate_invitation_with_qr(token):
         font_medium = None
         font_small = None
         
-        # Lista de fuentes a probar
+        # Obtener directorio del proyecto
+        project_dir = os.path.abspath(os.path.join(base_dir, '..', '..'))
+        
+        # Lista de fuentes a probar (incluye ruta del proyecto)
         font_paths = [
+            os.path.join(project_dir, 'fonts', 'Arial.ttf'),
+            os.path.join(project_dir, 'static', 'fonts', 'Arial.ttf'),
             "C:/Windows/Fonts/arial.ttf",
             "C:/Windows/Fonts/Arial.ttf",
-            "C:/Windows/Fonts/calibri.ttf",
-            "C:/Windows/Fonts/verdana.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
             "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+            "/System/Library/Fonts/Helvetica.ttc",
             "arial.ttf"
         ]
         
         for font_path in font_paths:
             try:
-                font_large = ImageFont.truetype(font_path, 100)
-                font_medium = ImageFont.truetype(font_path, 60)
-                font_small = ImageFont.truetype(font_path, 35)
+                # Tamaños más grandes
+                font_large = ImageFont.truetype(font_path, 90)
+                font_medium = ImageFont.truetype(font_path, 55)
+                font_small = ImageFont.truetype(font_path, 32)
+                print(f"✓ Fuente cargada: {font_path}")  # Debug
                 break  # Si funciona, salir del bucle
-            except:
+            except Exception as e:
                 continue
         
-        # Si no se encontró ninguna fuente, usar una fuente por defecto más grande
+        # Si no se encontró ninguna fuente, usar load_default
         if font_large is None:
-            # Crear una fuente desde PIL que sí acepta tamaños
+            print("⚠ No se encontró fuente TrueType, usando fuente por defecto")  # Debug
             font_large = ImageFont.load_default()
             font_medium = ImageFont.load_default()
             font_small = ImageFont.load_default()
@@ -296,10 +304,10 @@ def generate_invitation_with_qr(token):
         title_bbox = draw.textbbox((0, 0), title_text, font=font_large)
         title_width = title_bbox[2] - title_bbox[0]
         title_x = (background.width - title_width) // 2
-        title_y = 100  # Más espacio desde arriba
+        title_y = 80
         
         # Dibujar texto con efecto de sombra para simular el estilo del arte
-        shadow_offset = 5
+        shadow_offset = 4
         draw.text((title_x + shadow_offset, title_y + shadow_offset), title_text, 
                  font=font_large, fill=(0, 0, 0, 200))  # Sombra más oscura
         draw.text((title_x, title_y), title_text, 
@@ -310,7 +318,7 @@ def generate_invitation_with_qr(token):
         date_bbox = draw.textbbox((0, 0), date_text, font=font_medium)
         date_width = date_bbox[2] - date_bbox[0]
         date_x = (background.width - date_width) // 2
-        date_y = title_y + 200  # Más separado para texto grande
+        date_y = title_y + 120
         
         draw.text((date_x + shadow_offset, date_y + shadow_offset), date_text, 
                  font=font_medium, fill=(0, 0, 0, 200))  # Sombra más oscura
@@ -322,15 +330,15 @@ def generate_invitation_with_qr(token):
         warning_bbox = draw.textbbox((0, 0), warning_text, font=font_small)
         warning_width = warning_bbox[2] - warning_bbox[0]
         warning_x = (background.width - warning_width) // 2
-        warning_y = background.height - 150  # Más espacio desde abajo
+        warning_y = background.height - 120
         
         # Fondo semi-transparente para el aviso
-        padding = 20
+        padding = 15
         warning_rect = [
             warning_x - padding, 
             warning_y - padding, 
             warning_x + warning_width + padding, 
-            warning_y + 50 + padding
+            warning_y + 45 + padding
         ]
         draw.rectangle(warning_rect, fill=(0, 0, 0, 180))
         
