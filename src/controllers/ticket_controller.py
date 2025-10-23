@@ -250,9 +250,9 @@ def generate_invitation_with_qr(token):
         # 🔄 Rotar en dirección opuesta (hacia la izquierda) sin fondo negro
         qr_img = qr_img.rotate(5, expand=True, fillcolor=(255, 255, 255, 0))
 
-        # 📍 Posicionar el QR más abajo para no tapar el texto
+        # 📍 Posicionar el QR en el centro
         qr_x = (background.width - qr_img.width) // 2
-        qr_y = int(background.height * 0.6)  # Más abajo
+        qr_y = int(background.height * 0.5)  # Centro de la imagen
 
         # 🧩 Combinar sin opacidad adicional
         background.alpha_composite(qr_img, (qr_x, qr_y))
@@ -263,14 +263,14 @@ def generate_invitation_with_qr(token):
         # Intentar cargar una fuente personalizada, si no está disponible usar la por defecto
         try:
             # Buscar fuentes del sistema que se parezcan al estilo del arte
-            font_large = ImageFont.truetype("arial.ttf", 320)  # Aumentado de 80 a 320
-            font_medium = ImageFont.truetype("arial.ttf", 320)  # Aumentado de 50 a 150
-            font_small = ImageFont.truetype("arial.ttf", 320)   # Aumentado de 30 a 90
+            font_large = ImageFont.truetype("arial.ttf", 60)   # Título más grande
+            font_medium = ImageFont.truetype("arial.ttf", 40)  # Fecha mediana
+            font_small = ImageFont.truetype("arial.ttf", 25)   # Aviso pequeño
         except:
             try:
-                font_large = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 320)
-                font_medium = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 320)
-                font_small = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 320)
+                font_large = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 60)
+                font_medium = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 40)
+                font_small = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 25)
             except:
                 # Fuente por defecto si no se encuentra arial
                 font_large = ImageFont.load_default()
@@ -282,10 +282,10 @@ def generate_invitation_with_qr(token):
         title_bbox = draw.textbbox((0, 0), title_text, font=font_large)
         title_width = title_bbox[2] - title_bbox[0]
         title_x = (background.width - title_width) // 2
-        title_y = int(background.height * 0.05)  # Más arriba
+        title_y = 50  # Posición fija desde arriba
         
         # Dibujar texto con efecto de sombra para simular el estilo del arte
-        shadow_offset = 5  # Sombra más grande
+        shadow_offset = 3
         draw.text((title_x + shadow_offset, title_y + shadow_offset), title_text, 
                  font=font_large, fill=(0, 0, 0, 200))  # Sombra más oscura
         draw.text((title_x, title_y), title_text, 
@@ -296,7 +296,7 @@ def generate_invitation_with_qr(token):
         date_bbox = draw.textbbox((0, 0), date_text, font=font_medium)
         date_width = date_bbox[2] - date_bbox[0]
         date_x = (background.width - date_width) // 2
-        date_y = title_y + 150  # Más separado del título
+        date_y = title_y + 80  # Más cerca del título
         
         draw.text((date_x + shadow_offset, date_y + shadow_offset), date_text, 
                  font=font_medium, fill=(0, 0, 0, 200))  # Sombra más oscura
@@ -308,17 +308,17 @@ def generate_invitation_with_qr(token):
         warning_bbox = draw.textbbox((0, 0), warning_text, font=font_small)
         warning_width = warning_bbox[2] - warning_bbox[0]
         warning_x = (background.width - warning_width) // 2
-        warning_y = int(background.height * 0.85)
+        warning_y = background.height - 100  # Posición fija desde abajo
         
         # Fondo semi-transparente para el aviso
-        padding = 20
+        padding = 15
         warning_rect = [
             warning_x - padding, 
             warning_y - padding, 
             warning_x + warning_width + padding, 
-            warning_y + 40 + padding
+            warning_y + 30 + padding
         ]
-        draw.rectangle(warning_rect, fill=(0, 0, 0, 150))
+        draw.rectangle(warning_rect, fill=(0, 0, 0, 180))
         
         draw.text((warning_x, warning_y), warning_text, 
                  font=font_small, fill=(255, 255, 255, 255))
