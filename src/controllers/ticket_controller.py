@@ -206,7 +206,7 @@ def generate_qr(token):
 
 def generate_invitation_with_qr(token):
     try:
-        from PIL import Image
+        from PIL import Image, ImageDraw, ImageFont
         import qrcode, os, io
         from flask import send_file
 
@@ -256,6 +256,72 @@ def generate_invitation_with_qr(token):
 
         # 🧩 Combinar sin opacidad adicional
         background.alpha_composite(qr_img, (qr_x, qr_y))
+
+        # --- Agregar texto ---
+        draw = ImageDraw.Draw(background)
+        
+        # Intentar cargar una fuente personalizada, si no está disponible usar la por defecto
+        try:
+            # Buscar fuentes del sistema que se parezcan al estilo del arte
+            font_large = ImageFont.truetype("arial.ttf", 80)
+            font_medium = ImageFont.truetype("arial.ttf", 50)
+            font_small = ImageFont.truetype("arial.ttf", 30)
+        except:
+            try:
+                font_large = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 80)
+                font_medium = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 50)
+                font_small = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 30)
+            except:
+                # Fuente por defecto si no se encuentra arial
+                font_large = ImageFont.load_default()
+                font_medium = ImageFont.load_default()
+                font_small = ImageFont.load_default()
+
+        # --- Texto "URUBO WEST" ---
+        title_text = "URUBO WEST"
+        title_bbox = draw.textbbox((0, 0), title_text, font=font_large)
+        title_width = title_bbox[2] - title_bbox[0]
+        title_x = (background.width - title_width) // 2
+        title_y = int(background.height * 0.15)
+        
+        # Dibujar texto con efecto de sombra para simular el estilo del arte
+        shadow_offset = 3
+        draw.text((title_x + shadow_offset, title_y + shadow_offset), title_text, 
+                 font=font_large, fill=(0, 0, 0, 180))  # Sombra negra
+        draw.text((title_x, title_y), title_text, 
+                 font=font_large, fill=(255, 255, 255, 255))  # Texto blanco
+
+        # --- Fecha de la fiesta ---
+        date_text = "1º de noviembre"
+        date_bbox = draw.textbbox((0, 0), date_text, font=font_medium)
+        date_width = date_bbox[2] - date_bbox[0]
+        date_x = (background.width - date_width) // 2
+        date_y = title_y + 100
+        
+        draw.text((date_x + shadow_offset, date_y + shadow_offset), date_text, 
+                 font=font_medium, fill=(0, 0, 0, 180))  # Sombra
+        draw.text((date_x, date_y), date_text, 
+                 font=font_medium, fill=(255, 255, 255, 255))  # Texto blanco
+
+        # --- Aviso sobre unicidad del ticket ---
+        warning_text = "Este ticket es único y personal. Debe cuidarse y no compartirse."
+        warning_bbox = draw.textbbox((0, 0), warning_text, font=font_small)
+        warning_width = warning_bbox[2] - warning_bbox[0]
+        warning_x = (background.width - warning_width) // 2
+        warning_y = int(background.height * 0.85)
+        
+        # Fondo semi-transparente para el aviso
+        padding = 20
+        warning_rect = [
+            warning_x - padding, 
+            warning_y - padding, 
+            warning_x + warning_width + padding, 
+            warning_y + 40 + padding
+        ]
+        draw.rectangle(warning_rect, fill=(0, 0, 0, 150))
+        
+        draw.text((warning_x, warning_y), warning_text, 
+                 font=font_small, fill=(255, 255, 255, 255))
 
         # --- Guardar en memoria ---
         img_io = io.BytesIO()
