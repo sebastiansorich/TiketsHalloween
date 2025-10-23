@@ -244,11 +244,11 @@ def generate_invitation_with_qr(token):
         background = background.resize((1240, 1754))
 
         # --- Tamaño y posición del QR ---
-        qr_size = (400, 400)
+        qr_size = (300, 300)
         qr_img = qr_img.resize(qr_size)
 
         # 🔄 Rotar ligeramente para dar efecto natural
-        qr_img = qr_img.rotate(4, expand=True, fillcolor=(255, 255, 255, 0))
+        qr_img = qr_img.rotate(0, expand=True, fillcolor=(255, 255, 255, 0))
 
         # 📍 Centrar el QR entre la mano de Chucky y el título "URUBO WEST"
         # Ajustado para que quede en el espacio perfecto
