@@ -263,9 +263,9 @@ def generate_invitation_with_qr(token):
         # Intentar cargar una fuente personalizada, si no está disponible usar la por defecto
         try:
             # Buscar fuentes del sistema que se parezcan al estilo del arte
-            font_large = ImageFont.truetype("arial.ttf", 60)   # Título más grande
-            font_medium = ImageFont.truetype("arial.ttf", 40)  # Fecha mediana
-            font_small = ImageFont.truetype("arial.ttf", 25)   # Aviso pequeño
+            font_large = ImageFont.truetype("arial.ttf", 600)   # Título más grande
+            font_medium = ImageFont.truetype("arial.ttf", 400)  # Fecha mediana
+            font_small = ImageFont.truetype("arial.ttf", 250)   # Aviso pequeño
         except:
             try:
                 font_large = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 60)
