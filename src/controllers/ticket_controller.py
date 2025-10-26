@@ -223,7 +223,7 @@ def generate_invitation_with_qr(token):
 
         # --- Cargar imagen base ---
         base_dir = os.path.abspath(os.path.dirname(__file__))
-        image_path = os.path.join(base_dir, '..', '..', 'static', 'Artesinlogos.png')
+        image_path = os.path.join(base_dir, '..', '..', 'static', 'invitation_background.png')
         background = Image.open(image_path).convert("RGBA")
 
         # --- Ajustar proporción ---
@@ -244,15 +244,15 @@ def generate_invitation_with_qr(token):
         background = background.resize((1240, 1754))
 
         # --- Tamaño y posición del QR ---
-        qr_size = (375, 375)
+        qr_size = (400, 400)
         qr_img = qr_img.resize(qr_size)
 
         # 🔄 Rotar en dirección opuesta (hacia la izquierda) sin fondo negro
-        qr_img = qr_img.rotate(0, expand=True, fillcolor=(255, 255, 255, 0))
+        qr_img = qr_img.rotate(5.5, expand=True, fillcolor=(255, 255, 255, 0))
 
         # 📍 Posicionar más a la derecha y hacia abajo
-        qr_x = (background.width - qr_img.width) // 2 + 25
-        qr_y = int(background.height * 0.65)
+        qr_x = (background.width - qr_img.width) // 2 + 31
+        qr_y = int(background.height * 0.50)
 
         # 🧩 Combinar sin opacidad adicional
         background.alpha_composite(qr_img, (qr_x, qr_y))
@@ -302,8 +302,52 @@ def generate_invitation_with_qr(token):
             font_large = ImageFont.load_default()
             font_medium = ImageFont.load_default()
             font_small = ImageFont.load_default()
-            
 
+        # --- Texto "URUBO WEST" ---
+        title_text = "URUBO WEST"
+        title_bbox = draw.textbbox((0, 0), title_text, font=font_large)
+        title_width = title_bbox[2] - title_bbox[0]
+        title_x = (background.width - title_width) // 2
+        title_y = 80
+        
+        # Dibujar texto con efecto de sombra para simular el estilo del arte
+        shadow_offset = 4
+        draw.text((title_x + shadow_offset, title_y + shadow_offset), title_text, 
+                 font=font_large, fill=(0, 0, 0, 200))  # Sombra más oscura
+        draw.text((title_x, title_y), title_text, 
+                 font=font_large, fill=(255, 255, 255, 255))  # Texto blanco
+
+        # --- Fecha de la fiesta ---
+        date_text = "1º de noviembre"
+        date_bbox = draw.textbbox((0, 0), date_text, font=font_medium)
+        date_width = date_bbox[2] - date_bbox[0]
+        date_x = (background.width - date_width) // 2
+        date_y = title_y + 120
+        
+        draw.text((date_x + shadow_offset, date_y + shadow_offset), date_text, 
+                 font=font_medium, fill=(0, 0, 0, 200))  # Sombra más oscura
+        draw.text((date_x, date_y), date_text, 
+                 font=font_medium, fill=(255, 255, 255, 255))  # Texto blanco
+
+        # --- Aviso sobre unicidad del ticket ---
+        warning_text = "Este ticket es único y personal. Debe cuidarse y no compartirse."
+        warning_bbox = draw.textbbox((0, 0), warning_text, font=font_small)
+        warning_width = warning_bbox[2] - warning_bbox[0]
+        warning_x = (background.width - warning_width) // 2
+        warning_y = background.height - 120
+        
+        # Fondo semi-transparente para el aviso
+        padding = 15
+        warning_rect = [
+            warning_x - padding, 
+            warning_y - padding, 
+            warning_x + warning_width + padding, 
+            warning_y + 45 + padding
+        ]
+        draw.rectangle(warning_rect, fill=(0, 0, 0, 180))
+        
+        draw.text((warning_x, warning_y), warning_text, 
+                 font=font_small, fill=(255, 255, 255, 255))
 
         # --- Guardar en memoria ---
         img_io = io.BytesIO()
