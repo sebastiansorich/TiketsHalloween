@@ -257,7 +257,7 @@ def generate_invitation_with_qr(token):
         # --- Calcular tamaño del QR considerando la rotación ---
         # Para que el QR no se salga del borde del gafete, dimensionamos la
         # imagen base en función del tamaño del bounding box de un cuadrado rotado.
-        angle_deg = -10.5  # ajuste fino de inclinación para coincidir con el gafete
+        angle_deg = -12.5  # inclinación algo mayor en sentido horario para alinear con el papel
         angle_rad = math.radians(angle_deg)
         rotation_factor = abs(math.cos(angle_rad)) + abs(math.sin(angle_rad))
         # margen interno para evitar contacto visual con el borde del papel
@@ -277,6 +277,10 @@ def generate_invitation_with_qr(token):
         area_layer = Image.new("RGBA", (inner_w, inner_h), (0, 0, 0, 0))
         offset_x = (inner_w - qr_rotated.width) // 2
         offset_y = (inner_h - qr_rotated.height) // 2
+        # Microajustes visuales: desplazar ligeramente hacia la derecha y hacia arriba
+        # para coincidir con la perspectiva del gafete observada en la foto.
+        offset_x += int(inner_w * 0.018)   # derecha ~1.8% del ancho del área
+        offset_y -= int(inner_h * 0.028)   # arriba  ~2.8% de la altura del área
         area_layer.alpha_composite(qr_rotated, (offset_x, offset_y))
 
         # --- Integración visual para que parezca impreso bajo plástico ---
