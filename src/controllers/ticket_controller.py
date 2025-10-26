@@ -243,25 +243,34 @@ def generate_invitation_with_qr(token):
         # --- Redimensionar ---
         background = background.resize((1240, 1754))
 
-        # --- Delimitar el área interna del gafete (en proporciones) ---
-        # Estas proporciones fueron calibradas visualmente para la imagen base
-        # 1240x1754, apuntando al rectángulo blanco del gafete.
-        # Se usan proporciones para evitar desbordes al cambiar el tamaño del lienzo.
-        badge_left = int(background.width * 0.360)   # leve ajuste a la derecha y reducción de ancho
-        badge_right = int(background.width * 0.670)  # mantiene el centro y mejora simetría
-        badge_top = int(background.height * 0.495)   # subimos un poco el área
-        badge_bottom = int(background.height * 0.830) # y recortamos para centrar mejor verticalmente
+        # --- Delimitar el área interna del gafete (ajustable por URL) ---
+        # Puedes ajustar estas proporciones en tiempo real pasando parámetros en la URL:
+        # ?left=0.362&right=0.648&top=0.486&bottom=0.826  (fracciones del ancho/alto)
+        # Esto permite mover y escalar el "lienzo" sin tocar el código.
+        # Valores por defecto calibrados para 1240x1754 (tu imagen base).
+        left_ratio = float(request.args.get('left', '0.360'))
+        right_ratio = float(request.args.get('right', '0.670'))
+        top_ratio = float(request.args.get('top', '0.495'))
+        bottom_ratio = float(request.args.get('bottom', '0.830'))
+
+        # Convertimos a píxeles
+        badge_left = int(background.width * left_ratio)
+        badge_right = int(background.width * right_ratio)
+        badge_top = int(background.height * top_ratio)
+        badge_bottom = int(background.height * bottom_ratio)
         inner_w = badge_right - badge_left
         inner_h = badge_bottom - badge_top
 
         # --- Calcular tamaño del QR considerando la rotación ---
         # Para que el QR no se salga del borde del gafete, dimensionamos la
         # imagen base en función del tamaño del bounding box de un cuadrado rotado.
-        angle_deg = -12.5  # inclinación algo mayor en sentido horario para alinear con el papel
+        # Inclinación ajustable por URL: ?angle=-11.8
+        angle_deg = float(request.args.get('angle', '-12.5'))
         angle_rad = math.radians(angle_deg)
         rotation_factor = abs(math.cos(angle_rad)) + abs(math.sin(angle_rad))
-        # margen interno para evitar contacto visual con el borde del papel
-        inner_padding = int(min(inner_w, inner_h) * 0.035)
+        # Margen interno ajustable por URL: ?pad=0.035 (fracción del menor lado)
+        pad_ratio = float(request.args.get('pad', '0.035'))
+        inner_padding = int(min(inner_w, inner_h) * pad_ratio)
         usable_side = int((min(inner_w, inner_h) - 2 * inner_padding) * 0.94 / rotation_factor)
         qr_img = qr_img.resize((usable_side, usable_side), resample=Image.LANCZOS)
 
@@ -277,10 +286,13 @@ def generate_invitation_with_qr(token):
         area_layer = Image.new("RGBA", (inner_w, inner_h), (0, 0, 0, 0))
         offset_x = (inner_w - qr_rotated.width) // 2
         offset_y = (inner_h - qr_rotated.height) // 2
-        # Microajustes visuales: desplazar ligeramente hacia la derecha y hacia arriba
-        # para coincidir con la perspectiva del gafete observada en la foto.
-        offset_x += int(inner_w * 0.018)   # derecha ~1.8% del ancho del área
-        offset_y -= int(inner_h * 0.028)   # arriba  ~2.8% de la altura del área
+        # Microajustes visuales (ajustables por URL): ?ox=0.018&oy=0.028
+        # ox: desplaza a la derecha (fracción del ancho del área)
+        # oy: desplaza hacia arriba (fracción de la altura del área)
+        ox_ratio = float(request.args.get('ox', '0.018'))
+        oy_ratio = float(request.args.get('oy', '0.028'))
+        offset_x += int(inner_w * ox_ratio)
+        offset_y -= int(inner_h * oy_ratio)
         area_layer.alpha_composite(qr_rotated, (offset_x, offset_y))
 
         # --- Integración visual para que parezca impreso bajo plástico ---
@@ -322,6 +334,11 @@ def generate_invitation_with_qr(token):
         highlight = Image.new("RGBA", area_layer.size, (255, 255, 255, 0))
         highlight.putalpha(grad)
         area_layer = Image.alpha_composite(area_layer, highlight)
+
+        # --- Guías opcionales para depuración (activar con ?guide=1) ---
+        if request.args.get('guide') == '1':
+            g = ImageDraw.Draw(background)
+            g.rectangle([badge_left, badge_top, badge_right - 1, badge_bottom - 1], outline=(255, 0, 0, 180), width=2)
 
         # --- Fusionar la capa final dentro del área exacta del gafete ---
         background.alpha_composite(area_layer, (badge_left, badge_top))
@@ -423,7 +440,12 @@ def generate_invitation_with_qr(token):
         background.save(img_io, "PNG")
         img_io.seek(0)
 
-        return send_file(img_io, mimetype="image/png")
+        # Evitar caché para que veas los cambios inmediatamente
+        response = send_file(img_io, mimetype="image/png")
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        return response
 
     except Exception as e:
         return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
