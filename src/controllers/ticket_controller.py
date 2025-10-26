@@ -247,17 +247,17 @@ def generate_invitation_with_qr(token):
         # Estas proporciones fueron calibradas visualmente para la imagen base
         # 1240x1754, apuntando al rectángulo blanco del gafete.
         # Se usan proporciones para evitar desbordes al cambiar el tamaño del lienzo.
-        badge_left = int(background.width * 0.355)   # ajustado visualmente
-        badge_right = int(background.width * 0.645)  # ajustado visualmente
-        badge_top = int(background.height * 0.49)    # subimos el área para coincidir con el inicio del papel
-        badge_bottom = int(background.height * 0.84) # recortamos para no sobrepasar el borde inferior
+        badge_left = int(background.width * 0.360)   # leve ajuste a la derecha y reducción de ancho
+        badge_right = int(background.width * 0.640)  # mantiene el centro y mejora simetría
+        badge_top = int(background.height * 0.475)   # subimos un poco el área
+        badge_bottom = int(background.height * 0.830) # y recortamos para centrar mejor verticalmente
         inner_w = badge_right - badge_left
         inner_h = badge_bottom - badge_top
 
         # --- Calcular tamaño del QR considerando la rotación ---
         # Para que el QR no se salga del borde del gafete, dimensionamos la
         # imagen base en función del tamaño del bounding box de un cuadrado rotado.
-        angle_deg = -8.0  # inclinación en sentido horario para igualar el gafete real
+        angle_deg = -10.5  # ajuste fino de inclinación para coincidir con el gafete
         angle_rad = math.radians(angle_deg)
         rotation_factor = abs(math.cos(angle_rad)) + abs(math.sin(angle_rad))
         # margen interno para evitar contacto visual con el borde del papel
