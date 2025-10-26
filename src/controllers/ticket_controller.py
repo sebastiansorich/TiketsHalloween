@@ -248,10 +248,10 @@ def generate_invitation_with_qr(token):
         # ?left=0.362&right=0.648&top=0.486&bottom=0.826  (fracciones del ancho/alto)
         # Esto permite mover y escalar el "lienzo" sin tocar el código.
         # Valores por defecto calibrados para 1240x1754 (tu imagen base).
-        left_ratio = float(request.args.get('left', '0.360'))
-        right_ratio = float(request.args.get('right', '0.670'))
-        top_ratio = float(request.args.get('top', '0.495'))
-        bottom_ratio = float(request.args.get('bottom', '0.830'))
+        left_ratio = float(request.args.get('left', '0.37'))
+        right_ratio = float(request.args.get('right', '0.64'))
+        top_ratio = float(request.args.get('top', '0.50'))
+        bottom_ratio = float(request.args.get('bottom', '0.79'))
 
         # Convertimos a píxeles
         badge_left = int(background.width * left_ratio)
@@ -265,11 +265,11 @@ def generate_invitation_with_qr(token):
         # Para que el QR no se salga del borde del gafete, dimensionamos la
         # imagen base en función del tamaño del bounding box de un cuadrado rotado.
         # Inclinación ajustable por URL: ?angle=-11.8
-        angle_deg = float(request.args.get('angle', '-12.5'))
+        angle_deg = float(request.args.get('angle', '-11.0'))
         angle_rad = math.radians(angle_deg)
         rotation_factor = abs(math.cos(angle_rad)) + abs(math.sin(angle_rad))
         # Margen interno ajustable por URL: ?pad=0.035 (fracción del menor lado)
-        pad_ratio = float(request.args.get('pad', '0.035'))
+        pad_ratio = float(request.args.get('pad', '0.05'))
         inner_padding = int(min(inner_w, inner_h) * pad_ratio)
         usable_side = int((min(inner_w, inner_h) - 2 * inner_padding) * 0.94 / rotation_factor)
         qr_img = qr_img.resize((usable_side, usable_side), resample=Image.LANCZOS)
@@ -289,8 +289,8 @@ def generate_invitation_with_qr(token):
         # Microajustes visuales (ajustables por URL): ?ox=0.018&oy=0.028
         # ox: desplaza a la derecha (fracción del ancho del área)
         # oy: desplaza hacia arriba (fracción de la altura del área)
-        ox_ratio = float(request.args.get('ox', '0.018'))
-        oy_ratio = float(request.args.get('oy', '0.028'))
+        ox_ratio = float(request.args.get('ox', '0.015'))
+        oy_ratio = float(request.args.get('oy', '0.02'))
         offset_x += int(inner_w * ox_ratio)
         offset_y -= int(inner_h * oy_ratio)
         area_layer.alpha_composite(qr_rotated, (offset_x, offset_y))
