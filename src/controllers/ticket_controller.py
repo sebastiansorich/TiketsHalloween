@@ -206,8 +206,8 @@ def generate_qr(token):
 
 def generate_invitation_with_qr(token):
     try:
-        from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps, ImageEnhance, ImageChops
-        import qrcode, os, io, math
+        from PIL import Image, ImageDraw, ImageFont
+        import qrcode, os, io
         from flask import send_file
 
         # --- Crear el código QR ---
@@ -243,105 +243,19 @@ def generate_invitation_with_qr(token):
         # --- Redimensionar ---
         background = background.resize((1240, 1754))
 
-        # --- Delimitar el área interna del gafete (ajustable por URL) ---
-        # Puedes ajustar estas proporciones en tiempo real pasando parámetros en la URL:
-        # ?left=0.362&right=0.648&top=0.486&bottom=0.826  (fracciones del ancho/alto)
-        # Esto permite mover y escalar el "lienzo" sin tocar el código.
-        # Valores por defecto calibrados para 1240x1754 (tu imagen base).
-        left_ratio = float(request.args.get('left', '0.37'))
-        right_ratio = float(request.args.get('right', '0.64'))
-        top_ratio = float(request.args.get('top', '0.50'))
-        bottom_ratio = float(request.args.get('bottom', '0.79'))
+        # --- Tamaño y posición del QR ---
+        qr_size = (400, 400)
+        qr_img = qr_img.resize(qr_size)
 
-        # Convertimos a píxeles
-        badge_left = int(background.width * left_ratio)
-        badge_right = int(background.width * right_ratio)
-        badge_top = int(background.height * top_ratio)
-        badge_bottom = int(background.height * bottom_ratio)
-        inner_w = badge_right - badge_left
-        inner_h = badge_bottom - badge_top
+        # 🔄 Rotar en dirección opuesta (hacia la izquierda) sin fondo negro
+        qr_img = qr_img.rotate(5.5, expand=True, fillcolor=(255, 255, 255, 0))
 
-        # --- Calcular tamaño del QR considerando la rotación ---
-        # Para que el QR no se salga del borde del gafete, dimensionamos la
-        # imagen base en función del tamaño del bounding box de un cuadrado rotado.
-        # Inclinación ajustable por URL: ?angle=-11.8
-        angle_deg = float(request.args.get('angle', '-11.0'))
-        angle_rad = math.radians(angle_deg)
-        rotation_factor = abs(math.cos(angle_rad)) + abs(math.sin(angle_rad))
-        # Margen interno ajustable por URL: ?pad=0.035 (fracción del menor lado)
-        pad_ratio = float(request.args.get('pad', '0.05'))
-        inner_padding = int(min(inner_w, inner_h) * pad_ratio)
-        usable_side = int((min(inner_w, inner_h) - 2 * inner_padding) * 0.94 / rotation_factor)
-        qr_img = qr_img.resize((usable_side, usable_side), resample=Image.LANCZOS)
+        # 📍 Posicionar más a la derecha y hacia abajo
+        qr_x = (background.width - qr_img.width) // 2 + 31
+        qr_y = int(background.height * 0.50)
 
-        # Rotamos suavemente para coincidir con la perspectiva del gafete
-        qr_rotated = qr_img.rotate(
-            angle_deg,
-            expand=True,
-            resample=Image.BICUBIC,
-            fillcolor=(255, 255, 255, 0)
-        )
-
-        # --- Centrar el QR dentro del rectángulo del gafete ---
-        area_layer = Image.new("RGBA", (inner_w, inner_h), (0, 0, 0, 0))
-        offset_x = (inner_w - qr_rotated.width) // 2
-        offset_y = (inner_h - qr_rotated.height) // 2
-        # Microajustes visuales (ajustables por URL): ?ox=0.018&oy=0.028
-        # ox: desplaza a la derecha (fracción del ancho del área)
-        # oy: desplaza hacia arriba (fracción de la altura del área)
-        ox_ratio = float(request.args.get('ox', '0.015'))
-        oy_ratio = float(request.args.get('oy', '0.02'))
-        offset_x += int(inner_w * ox_ratio)
-        offset_y -= int(inner_h * oy_ratio)
-        area_layer.alpha_composite(qr_rotated, (offset_x, offset_y))
-
-        # --- Integración visual para que parezca impreso bajo plástico ---
-        # 1) Suavizado de bordes: desenfoque muy leve del canal alfa para evitar
-        #    un corte digital duro pero manteniendo legibilidad del QR.
-        qr_alpha = area_layer.split()[3]
-        soft_alpha = qr_alpha.filter(ImageFilter.GaussianBlur(0.6))
-
-        # Recorte con esquinas redondeadas para imitar el papel interior del gafete
-        corner_radius = max(12, int(min(inner_w, inner_h) * 0.055))
-        clip_mask = Image.new('L', (inner_w, inner_h), 0)
-        clip_draw = ImageDraw.Draw(clip_mask)
-        clip_draw.rounded_rectangle([0, 0, inner_w - 1, inner_h - 1], radius=corner_radius, fill=255)
-        final_alpha = ImageChops.multiply(soft_alpha, clip_mask)
-        area_layer.putalpha(final_alpha)
-
-        # 2) Ligero blanqueo para simular tinta absorbida por papel
-        tint_overlay = Image.new("RGBA", area_layer.size, (255, 255, 255, 30))
-        area_layer.paste(tint_overlay, (0, 0), mask=soft_alpha)
-
-        # 3) Sombra interna suave en el borde del rectángulo del gafete
-        edge_mask = Image.new('L', area_layer.size, 0)
-        edge_draw = ImageDraw.Draw(edge_mask)
-        edge_margin = 10  # ancho de la zona sombreada hacia adentro
-        edge_draw.rectangle([0, 0, inner_w - 1, inner_h - 1], fill=120)
-        edge_draw.rectangle([edge_margin, edge_margin, inner_w - 1 - edge_margin, inner_h - 1 - edge_margin], fill=0)
-        edge_mask = edge_mask.filter(ImageFilter.GaussianBlur(4))
-        inner_shadow = Image.new("RGBA", area_layer.size, (0, 0, 0, 60))
-        area_layer.paste(inner_shadow, (0, 0), mask=edge_mask)
-
-        # 4) Brillo plástico muy sutil con gradiente diagonal
-        try:
-            grad = Image.linear_gradient("L").resize(area_layer.size)
-            grad = grad.rotate(-35, resample=Image.BICUBIC)
-        except Exception:
-            grad = Image.new("L", area_layer.size, 0)
-        # Reducimos intensidad para que no parezca pegatina ni reflejo duro
-        grad = grad.point(lambda p: int(p * 0.18))
-        highlight = Image.new("RGBA", area_layer.size, (255, 255, 255, 0))
-        highlight.putalpha(grad)
-        area_layer = Image.alpha_composite(area_layer, highlight)
-
-        # --- Guías opcionales para depuración (activar con ?guide=1) ---
-        if request.args.get('guide') == '1':
-            g = ImageDraw.Draw(background)
-            g.rectangle([badge_left, badge_top, badge_right - 1, badge_bottom - 1], outline=(255, 0, 0, 180), width=2)
-
-        # --- Fusionar la capa final dentro del área exacta del gafete ---
-        background.alpha_composite(area_layer, (badge_left, badge_top))
+        # 🧩 Combinar sin opacidad adicional
+        background.alpha_composite(qr_img, (qr_x, qr_y))
 
         # --- Agregar texto ---
         draw = ImageDraw.Draw(background)
@@ -440,12 +354,7 @@ def generate_invitation_with_qr(token):
         background.save(img_io, "PNG")
         img_io.seek(0)
 
-        # Evitar caché para que veas los cambios inmediatamente
-        response = send_file(img_io, mimetype="image/png")
-        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-        response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '0'
-        return response
+        return send_file(img_io, mimetype="image/png")
 
     except Exception as e:
         return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
