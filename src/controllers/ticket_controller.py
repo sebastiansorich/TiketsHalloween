@@ -1,6 +1,6 @@
 import io
 import os
-from PIL import Image 
+from PIL import Image, ImageFilter, ImageDraw
 from flask import request, jsonify, send_file
 from datetime import datetime
 import pytz
@@ -244,18 +244,74 @@ def generate_invitation_with_qr(token):
         background = background.resize((1240, 1754))
 
         # --- Tamaño y posición del QR ---
-        qr_size = (400, 400)
+        qr_size = (380, 380)  # Reducido ligeramente para mejor ajuste
         qr_img = qr_img.resize(qr_size)
 
-        # 🔄 Rotar en dirección opuesta (hacia la izquierda) sin fondo negro
-        qr_img = qr_img.rotate(5.5, expand=True, fillcolor=(255, 255, 255, 0))
+        # 🔄 Rotar para que coincida con el gafete
+        qr_img_rotated = qr_img.rotate(5.5, expand=True, fillcolor=(255, 255, 255, 0))
 
-        # 📍 Posicionar más a la derecha y hacia abajo
-        qr_x = (background.width - qr_img.width) // 2 + 31
-        qr_y = int(background.height * 0.50)
-
-        # 🧩 Combinar sin opacidad adicional
-        background.alpha_composite(qr_img, (qr_x, qr_y))
+        # --- Crear sombra para integrar el QR con el gafete ---
+        # Crear una capa de sombra para dar profundidad
+        # Crear una imagen para la sombra del QR
+        shadow_layer = Image.new('RGBA', background.size, (0, 0, 0, 0))
+        shadow_draw = ImageDraw.Draw(shadow_layer)
+        
+        # 📍 Calcular posición centrada en el gafete
+        # El gafete está aproximadamente centrado horizontalmente y en la mitad inferior
+        qr_x = (background.width - qr_img_rotated.width) // 2 + 5  # Ajuste fino horizontal
+        qr_y = int(background.height * 0.505)  # Ajuste fino vertical
+        
+        # Dibujar sombra múltiple para mejor efecto de profundidad
+        shadow_offset_large = 12
+        shadow_offset_medium = 6
+        shadow_offset_small = 3
+        
+        # Sombra grande (más difusa)
+        shadow_draw.rectangle(
+            [qr_x - shadow_offset_large, qr_y - shadow_offset_large, 
+             qr_x + qr_img_rotated.width + shadow_offset_large, 
+             qr_y + qr_img_rotated.height + shadow_offset_large],
+            fill=(0, 0, 0, 30)
+        )
+        
+        # Sombra mediana
+        shadow_draw.rectangle(
+            [qr_x - shadow_offset_medium, qr_y - shadow_offset_medium, 
+             qr_x + qr_img_rotated.width + shadow_offset_medium, 
+             qr_y + qr_img_rotated.height + shadow_offset_medium],
+            fill=(0, 0, 0, 50)
+        )
+        
+        # Sombra pequeña (más intensa)
+        shadow_draw.rectangle(
+            [qr_x - shadow_offset_small, qr_y - shadow_offset_small, 
+             qr_x + qr_img_rotated.width + shadow_offset_small, 
+             qr_y + qr_img_rotated.height + shadow_offset_small],
+            fill=(0, 0, 0, 70)
+        )
+        
+        # Aplicar blur a la capa de sombra para un efecto más natural
+        shadow_layer = shadow_layer.filter(ImageFilter.GaussianBlur(radius=8))
+        
+        # Combinar la sombra con el fondo
+        background = Image.alpha_composite(background, shadow_layer)
+        
+        # Ahora agregar el QR sobre la sombra
+        background.alpha_composite(qr_img_rotated, (qr_x, qr_y))
+        
+        # --- Agregar borde sutil al QR para mayor integración ---
+        draw = ImageDraw.Draw(background)
+        # Borde inferior derecho (luz)
+        draw.rectangle(
+            [qr_x + qr_img_rotated.width, qr_y + 2, 
+             qr_x + qr_img_rotated.width + 2, qr_y + qr_img_rotated.height + 2],
+            fill=(255, 255, 255, 40)
+        )
+        draw.rectangle(
+            [qr_x + 2, qr_y + qr_img_rotated.height, 
+             qr_x + qr_img_rotated.width + 2, qr_y + qr_img_rotated.height + 2],
+            fill=(255, 255, 255, 40)
+        )
 
         # --- Agregar texto ---
         draw = ImageDraw.Draw(background)
