@@ -206,7 +206,7 @@ def generate_qr(token):
 
 def generate_invitation_with_qr(token):
     try:
-        from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps, ImageEnhance
+        from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps, ImageEnhance, ImageChops
         import qrcode, os, io, math
         from flask import send_file
 
@@ -247,20 +247,22 @@ def generate_invitation_with_qr(token):
         # Estas proporciones fueron calibradas visualmente para la imagen base
         # 1240x1754, apuntando al rectángulo blanco del gafete.
         # Se usan proporciones para evitar desbordes al cambiar el tamaño del lienzo.
-        badge_left = int(background.width * 0.34)
-        badge_right = int(background.width * 0.66)
-        badge_top = int(background.height * 0.60)
-        badge_bottom = int(background.height * 0.86)
+        badge_left = int(background.width * 0.355)   # ajustado visualmente
+        badge_right = int(background.width * 0.645)  # ajustado visualmente
+        badge_top = int(background.height * 0.49)    # subimos el área para coincidir con el inicio del papel
+        badge_bottom = int(background.height * 0.84) # recortamos para no sobrepasar el borde inferior
         inner_w = badge_right - badge_left
         inner_h = badge_bottom - badge_top
 
         # --- Calcular tamaño del QR considerando la rotación ---
         # Para que el QR no se salga del borde del gafete, dimensionamos la
         # imagen base en función del tamaño del bounding box de un cuadrado rotado.
-        angle_deg = 6.0  # ligera inclinación para coincidir con el ángulo del gafete
+        angle_deg = -8.0  # inclinación en sentido horario para igualar el gafete real
         angle_rad = math.radians(angle_deg)
         rotation_factor = abs(math.cos(angle_rad)) + abs(math.sin(angle_rad))
-        usable_side = int(min(inner_w, inner_h) * 0.94 / rotation_factor)
+        # margen interno para evitar contacto visual con el borde del papel
+        inner_padding = int(min(inner_w, inner_h) * 0.035)
+        usable_side = int((min(inner_w, inner_h) - 2 * inner_padding) * 0.94 / rotation_factor)
         qr_img = qr_img.resize((usable_side, usable_side), resample=Image.LANCZOS)
 
         # Rotamos suavemente para coincidir con la perspectiva del gafete
@@ -282,7 +284,14 @@ def generate_invitation_with_qr(token):
         #    un corte digital duro pero manteniendo legibilidad del QR.
         qr_alpha = area_layer.split()[3]
         soft_alpha = qr_alpha.filter(ImageFilter.GaussianBlur(0.6))
-        area_layer.putalpha(soft_alpha)
+
+        # Recorte con esquinas redondeadas para imitar el papel interior del gafete
+        corner_radius = max(12, int(min(inner_w, inner_h) * 0.055))
+        clip_mask = Image.new('L', (inner_w, inner_h), 0)
+        clip_draw = ImageDraw.Draw(clip_mask)
+        clip_draw.rounded_rectangle([0, 0, inner_w - 1, inner_h - 1], radius=corner_radius, fill=255)
+        final_alpha = ImageChops.multiply(soft_alpha, clip_mask)
+        area_layer.putalpha(final_alpha)
 
         # 2) Ligero blanqueo para simular tinta absorbida por papel
         tint_overlay = Image.new("RGBA", area_layer.size, (255, 255, 255, 30))
