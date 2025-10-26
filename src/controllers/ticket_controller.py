@@ -248,8 +248,8 @@ def generate_invitation_with_qr(token):
         # 1240x1754, apuntando al rectángulo blanco del gafete.
         # Se usan proporciones para evitar desbordes al cambiar el tamaño del lienzo.
         badge_left = int(background.width * 0.360)   # leve ajuste a la derecha y reducción de ancho
-        badge_right = int(background.width * 0.640)  # mantiene el centro y mejora simetría
-        badge_top = int(background.height * 0.475)   # subimos un poco el área
+        badge_right = int(background.width * 0.670)  # mantiene el centro y mejora simetría
+        badge_top = int(background.height * 0.495)   # subimos un poco el área
         badge_bottom = int(background.height * 0.830) # y recortamos para centrar mejor verticalmente
         inner_w = badge_right - badge_left
         inner_h = badge_bottom - badge_top
