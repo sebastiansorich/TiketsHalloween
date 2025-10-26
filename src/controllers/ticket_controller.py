@@ -206,8 +206,8 @@ def generate_qr(token):
 
 def generate_invitation_with_qr(token):
     try:
-        from PIL import Image, ImageDraw, ImageFont
-        import qrcode, os, io
+        from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps, ImageEnhance
+        import qrcode, os, io, math
         from flask import send_file
 
         # --- Crear el código QR ---
@@ -243,19 +243,75 @@ def generate_invitation_with_qr(token):
         # --- Redimensionar ---
         background = background.resize((1240, 1754))
 
-        # --- Tamaño y posición del QR ---
-        qr_size = (400, 400)
-        qr_img = qr_img.resize(qr_size)
+        # --- Delimitar el área interna del gafete (en proporciones) ---
+        # Estas proporciones fueron calibradas visualmente para la imagen base
+        # 1240x1754, apuntando al rectángulo blanco del gafete.
+        # Se usan proporciones para evitar desbordes al cambiar el tamaño del lienzo.
+        badge_left = int(background.width * 0.34)
+        badge_right = int(background.width * 0.66)
+        badge_top = int(background.height * 0.60)
+        badge_bottom = int(background.height * 0.86)
+        inner_w = badge_right - badge_left
+        inner_h = badge_bottom - badge_top
 
-        # 🔄 Rotar en dirección opuesta (hacia la izquierda) sin fondo negro
-        qr_img = qr_img.rotate(5.5, expand=True, fillcolor=(255, 255, 255, 0))
+        # --- Calcular tamaño del QR considerando la rotación ---
+        # Para que el QR no se salga del borde del gafete, dimensionamos la
+        # imagen base en función del tamaño del bounding box de un cuadrado rotado.
+        angle_deg = 6.0  # ligera inclinación para coincidir con el ángulo del gafete
+        angle_rad = math.radians(angle_deg)
+        rotation_factor = abs(math.cos(angle_rad)) + abs(math.sin(angle_rad))
+        usable_side = int(min(inner_w, inner_h) * 0.94 / rotation_factor)
+        qr_img = qr_img.resize((usable_side, usable_side), resample=Image.LANCZOS)
 
-        # 📍 Posicionar más a la derecha y hacia abajo
-        qr_x = (background.width - qr_img.width) // 2 + 31
-        qr_y = int(background.height * 0.50)
+        # Rotamos suavemente para coincidir con la perspectiva del gafete
+        qr_rotated = qr_img.rotate(
+            angle_deg,
+            expand=True,
+            resample=Image.BICUBIC,
+            fillcolor=(255, 255, 255, 0)
+        )
 
-        # 🧩 Combinar sin opacidad adicional
-        background.alpha_composite(qr_img, (qr_x, qr_y))
+        # --- Centrar el QR dentro del rectángulo del gafete ---
+        area_layer = Image.new("RGBA", (inner_w, inner_h), (0, 0, 0, 0))
+        offset_x = (inner_w - qr_rotated.width) // 2
+        offset_y = (inner_h - qr_rotated.height) // 2
+        area_layer.alpha_composite(qr_rotated, (offset_x, offset_y))
+
+        # --- Integración visual para que parezca impreso bajo plástico ---
+        # 1) Suavizado de bordes: desenfoque muy leve del canal alfa para evitar
+        #    un corte digital duro pero manteniendo legibilidad del QR.
+        qr_alpha = area_layer.split()[3]
+        soft_alpha = qr_alpha.filter(ImageFilter.GaussianBlur(0.6))
+        area_layer.putalpha(soft_alpha)
+
+        # 2) Ligero blanqueo para simular tinta absorbida por papel
+        tint_overlay = Image.new("RGBA", area_layer.size, (255, 255, 255, 30))
+        area_layer.paste(tint_overlay, (0, 0), mask=soft_alpha)
+
+        # 3) Sombra interna suave en el borde del rectángulo del gafete
+        edge_mask = Image.new('L', area_layer.size, 0)
+        edge_draw = ImageDraw.Draw(edge_mask)
+        edge_margin = 10  # ancho de la zona sombreada hacia adentro
+        edge_draw.rectangle([0, 0, inner_w - 1, inner_h - 1], fill=120)
+        edge_draw.rectangle([edge_margin, edge_margin, inner_w - 1 - edge_margin, inner_h - 1 - edge_margin], fill=0)
+        edge_mask = edge_mask.filter(ImageFilter.GaussianBlur(4))
+        inner_shadow = Image.new("RGBA", area_layer.size, (0, 0, 0, 60))
+        area_layer.paste(inner_shadow, (0, 0), mask=edge_mask)
+
+        # 4) Brillo plástico muy sutil con gradiente diagonal
+        try:
+            grad = Image.linear_gradient("L").resize(area_layer.size)
+            grad = grad.rotate(-35, resample=Image.BICUBIC)
+        except Exception:
+            grad = Image.new("L", area_layer.size, 0)
+        # Reducimos intensidad para que no parezca pegatina ni reflejo duro
+        grad = grad.point(lambda p: int(p * 0.18))
+        highlight = Image.new("RGBA", area_layer.size, (255, 255, 255, 0))
+        highlight.putalpha(grad)
+        area_layer = Image.alpha_composite(area_layer, highlight)
+
+        # --- Fusionar la capa final dentro del área exacta del gafete ---
+        background.alpha_composite(area_layer, (badge_left, badge_top))
 
         # --- Agregar texto ---
         draw = ImageDraw.Draw(background)
