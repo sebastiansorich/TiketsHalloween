@@ -253,7 +253,7 @@ def generate_invitation_with_qr(token):
 
         # 📍 Posicionar más a la derecha
         qr_x = (background.width - qr_img.width) // 2 + 43
-        qr_y = int(background.height * 0.65)
+        qr_y = int(background.height * 0.75)
 
         # 🧩 Integración realista del QR con el fondo
         #    - Muestrea color promedio del área
