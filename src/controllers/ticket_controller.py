@@ -444,8 +444,8 @@ def generate_invitation_with_qr(token):
             entry_width_with_spacing += char_width + letter_spacing
         entry_width_with_spacing -= letter_spacing
         
-        entry_x = (background.width - entry_width_with_spacing) // 2 + 2  # +2px hacia la derecha
-        entry_y = qr_y - 100  # Posicionar más arriba del QR para dar espacio a la rotación
+        entry_x = (background.width - entry_width_with_spacing) // 2 + 4  # +4px hacia la derecha
+        entry_y = qr_y - 90  # +90px hacia arriba
         
         # Crear una imagen temporal más grande para la rotación
         temp_size = (background.width + 200, background.height + 200)
