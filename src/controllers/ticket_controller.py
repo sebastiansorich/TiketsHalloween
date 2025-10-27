@@ -253,7 +253,7 @@ def generate_invitation_with_qr(token):
 
         # 📍 Posicionar más a la derecha
         qr_x = (background.width - qr_img.width) // 2 + 43
-        qr_y = int(background.height * 0.30)
+        qr_y = int(background.height * 0.65)
 
         # 🧩 Integración realista del QR con el fondo
         #    - Muestrea color promedio del área
@@ -452,9 +452,10 @@ def generate_invitation_with_qr(token):
             pass_width_with_spacing += char_width + letter_spacing
         pass_width_with_spacing -= letter_spacing
         
-        # Centrar cada línea por separado
-        entry_x = (background.width - entry_width_with_spacing) // 2 + 8  # +8px hacia la derecha
-        pass_x = (background.width - pass_width_with_spacing) // 2 + 8  # +8px hacia la derecha
+        # Usar el ancho mayor para centrar ambas líneas
+        max_width = max(entry_width_with_spacing, pass_width_with_spacing)
+        
+        entry_x = (background.width - max_width) // 2 + 8  # +8px hacia la derecha
         entry_y = qr_y - 60  # +60px hacia arriba
         pass_y = entry_y + 70  # 70px debajo de ENTRY
         
@@ -466,8 +467,6 @@ def generate_invitation_with_qr(token):
         # Ajustar coordenadas para la imagen temporal más grande
         temp_entry_x = entry_x + 100
         temp_entry_y = entry_y + 100
-        temp_pass_x = pass_x + 100
-        temp_pass_y = pass_y + 100
         
         # Dibujar sombra suave para ENTRY (primera línea)
         current_x_shadow_entry = temp_entry_x
@@ -479,7 +478,8 @@ def generate_invitation_with_qr(token):
             current_x_shadow_entry += char_width + letter_spacing
         
         # Dibujar sombra suave para PASS (segunda línea)
-        current_x_shadow_pass = temp_pass_x
+        temp_pass_y = temp_entry_y + 70  # 70px debajo de ENTRY
+        current_x_shadow_pass = temp_entry_x
         for char in pass_text:
             temp_draw_entry.text((current_x_shadow_pass + shadow_offset, temp_pass_y + shadow_offset), char, 
                                font=entry_font, fill=(0, 0, 0, 153))  # Opacidad 60%
@@ -517,7 +517,8 @@ def generate_invitation_with_qr(token):
             current_x_entry += char_width + letter_spacing
         
         # Dibujar PASS con espaciado (rojo #FF0000) - segunda línea
-        current_x_pass = temp_pass_x
+        temp_pass_y = temp_entry_y + 70  # 70px debajo de ENTRY
+        current_x_pass = temp_entry_x
         for char in pass_text:
             temp_draw_text.text((current_x_pass, temp_pass_y), char, 
                               font=entry_font, fill=(255, 0, 0, 255))  # Rojo puro
