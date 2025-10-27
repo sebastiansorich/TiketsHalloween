@@ -306,51 +306,50 @@ def generate_invitation_with_qr(token):
         # Obtener directorio del proyecto
         project_dir = os.path.abspath(os.path.join(base_dir, '..', '..'))
         
-        # 🎃 Asegurar fuente Creepster EXCLUSIVAMENTE (según especificaciones)
+        # 🎃 Cargar fuente Creepster EXCLUSIVAMENTE (según especificaciones)
+        # IMPORTANTE: En Vercel (serverless), la fuente DEBE estar en el repositorio
         fonts_dir = os.path.join(project_dir, 'static', 'fonts')
-        os.makedirs(fonts_dir, exist_ok=True)
         creepster_path = os.path.join(fonts_dir, 'Creepster-Regular.ttf')
 
-        # Descargar Creepster si no existe
+        # Verificar si existe la fuente
         if not os.path.isfile(creepster_path):
-            print("⚠ Creepster no encontrada, descargando...")
-            creepster_urls = [
-                'https://github.com/google/fonts/raw/main/ofl/creepster/Creepster-Regular.ttf',
-                'https://raw.githubusercontent.com/google/fonts/main/ofl/creepster/Creepster-Regular.ttf'
+            # Buscar en rutas alternativas (para compatibilidad con diferentes entornos)
+            alternative_paths = [
+                os.path.join('/var/task/static/fonts', 'Creepster-Regular.ttf'),  # Vercel Lambda
+                os.path.join(base_dir, '..', '..', 'static', 'fonts', 'Creepster-Regular.ttf'),
+                'static/fonts/Creepster-Regular.ttf',  # Ruta relativa
             ]
-            for url in creepster_urls:
-                try:
-                    resp = requests.get(url, timeout=10)
-                    if resp.status_code == 200 and resp.content:
-                        with open(creepster_path, 'wb') as f:
-                            f.write(resp.content)
-                        print(f"✓ Creepster descargada exitosamente: {creepster_path}")
-                        break
-                except Exception as e:
-                    print(f"⚠ Error descargando desde {url}: {e}")
-                    continue
+            
+            for alt_path in alternative_paths:
+                if os.path.isfile(alt_path):
+                    creepster_path = alt_path
+                    print(f"✓ Creepster encontrada en ruta alternativa: {alt_path}")
+                    break
+            else:
+                print(f"❌ ERROR: Creepster no encontrada en ninguna ruta")
+                print(f"   Rutas buscadas:")
+                print(f"   - {os.path.join(fonts_dir, 'Creepster-Regular.ttf')}")
+                for alt_path in alternative_paths:
+                    print(f"   - {alt_path}")
+                raise Exception(
+                    "Fuente Creepster-Regular.ttf no encontrada. "
+                    "Por favor, descarga la fuente desde https://fonts.google.com/specimen/Creepster "
+                    "y colócala en static/fonts/Creepster-Regular.ttf antes de desplegar."
+                )
 
         # Cargar fuentes Creepster con tamaños específicos
         # Título: 110pt | Subtítulo: 60pt | Warning: 32pt
-        title_font = None
-        date_font = None
-        font_small = None
-        
-        if os.path.isfile(creepster_path):
-            try:
-                title_font = ImageFont.truetype(creepster_path, 110)  # URUBO WEST
-                date_font = ImageFont.truetype(creepster_path, 60)    # 1º de noviembre
-                font_small = ImageFont.truetype(creepster_path, 32)   # Warning text
-                print(f"✓ Fuente Creepster cargada correctamente")
-                print(f"  - Título: 110pt")
-                print(f"  - Subtítulo: 60pt")
-                print(f"  - Warning: 32pt")
-            except Exception as e:
-                print(f"❌ ERROR CRÍTICO: No se pudo cargar Creepster: {e}")
-                raise Exception(f"No se pudo cargar la fuente Creepster requerida: {e}")
-        else:
-            print(f"❌ ERROR CRÍTICO: Creepster no existe en {creepster_path}")
-            raise Exception(f"Fuente Creepster no disponible en {creepster_path}")
+        try:
+            title_font = ImageFont.truetype(creepster_path, 110)  # URUBO WEST
+            date_font = ImageFont.truetype(creepster_path, 60)    # 1º de noviembre
+            font_small = ImageFont.truetype(creepster_path, 32)   # Warning text
+            print(f"✓ Fuente Creepster cargada correctamente desde: {creepster_path}")
+            print(f"  - Título: 110pt")
+            print(f"  - Subtítulo: 60pt")
+            print(f"  - Warning: 32pt")
+        except Exception as e:
+            print(f"❌ ERROR CRÍTICO: No se pudo cargar Creepster desde {creepster_path}: {e}")
+            raise Exception(f"No se pudo cargar la fuente Creepster requerida: {e}")
 
         # --- Texto "URUBO WEST" con Creepster y espaciado ---
         title_text = "URUBO WEST"
