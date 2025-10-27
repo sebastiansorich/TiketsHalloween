@@ -253,7 +253,7 @@ def generate_invitation_with_qr(token):
 
         # 📍 Posicionar más a la derecha
         qr_x = (background.width - qr_img.width) // 2 + 43
-        qr_y = int(background.height * 0.50)
+        qr_y = int(background.height * 0.46)
 
         # 🧩 Integración realista del QR con el fondo
         #    - Muestrea color promedio del área
@@ -306,10 +306,10 @@ def generate_invitation_with_qr(token):
         # Obtener directorio del proyecto
         project_dir = os.path.abspath(os.path.join(base_dir, '..', '..'))
         
-        # 🎃 Cargar fuentes Butcherman (título) y Creepster (subtítulo)
+        # 💪 Cargar fuentes Anton (título bold) y Creepster (subtítulo)
         # IMPORTANTE: En Vercel (serverless), las fuentes DEBEN estar en el repositorio
         fonts_dir = os.path.join(project_dir, 'static', 'fonts')
-        butcherman_path = os.path.join(fonts_dir, 'Butcherman-Regular.ttf')
+        anton_path = os.path.join(fonts_dir, 'Anton-Regular.ttf')
         creepster_path = os.path.join(fonts_dir, 'Creepster-Regular.ttf')
 
         def find_font(font_name, primary_path):
@@ -331,24 +331,24 @@ def generate_invitation_with_qr(token):
             raise Exception(f"Fuente {font_name} no encontrada en static/fonts/")
         
         # Buscar ambas fuentes
-        butcherman_path = find_font('Butcherman-Regular.ttf', butcherman_path)
+        anton_path = find_font('Anton-Regular.ttf', anton_path)
         creepster_path = find_font('Creepster-Regular.ttf', creepster_path)
 
         # Cargar fuentes con tamaños específicos
-        # Título: Butcherman 160pt | Subtítulo: Creepster 60pt | Warning: Creepster 32pt
+        # Título: Anton 160pt | Subtítulo: Creepster 60pt | Warning: Creepster 32pt
         try:
-            title_font = ImageFont.truetype(butcherman_path, 160)  # URUBO WEST - Butcherman
-            date_font = ImageFont.truetype(creepster_path, 60)     # 1º DE NOVIEMBRE - Creepster
-            font_small = ImageFont.truetype(creepster_path, 32)    # Warning - Creepster
+            title_font = ImageFont.truetype(anton_path, 160)      # URUBO WEST - Anton
+            date_font = ImageFont.truetype(creepster_path, 60)    # 1º DE NOVIEMBRE - Creepster
+            font_small = ImageFont.truetype(creepster_path, 32)   # Warning - Creepster
             print(f"✓ Fuentes cargadas:")
-            print(f"  - Título: Butcherman 160pt")
+            print(f"  - Título: Anton 160pt (bold, condensed)")
             print(f"  - Subtítulo: Creepster 60pt")
             print(f"  - Warning: Creepster 32pt")
         except Exception as e:
             print(f"❌ ERROR: No se pudieron cargar las fuentes: {e}")
             raise Exception(f"Error cargando fuentes: {e}")
 
-        # --- Texto "URUBO WEST" con Butcherman 160pt y espaciado ---
+        # --- Texto "URUBO WEST" con Anton 160pt (bold, condensed) y espaciado ---
         title_text = "URUBO WEST"
         
         # Crear capa temporal para aplicar desenfoque a la sombra
