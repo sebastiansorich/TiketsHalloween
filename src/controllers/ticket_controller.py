@@ -251,11 +251,48 @@ def generate_invitation_with_qr(token):
         qr_img = qr_img.rotate(5.5, expand=True, fillcolor=(255, 255, 255, 0))
 
         # 📍 Posicionar más a la derecha
-        qr_x = (background.width - qr_img.width) // 2 + 80
+        qr_x = (background.width - qr_img.width) // 2 + 70
         qr_y = int(background.height * 0.50)
 
-        # 🧩 Combinar sin opacidad adicional
-        background.alpha_composite(qr_img, (qr_x, qr_y))
+        # 🧩 Integración realista del QR con el fondo
+        #    - Muestrea color promedio del área
+        #    - Tinta el QR hacia los colores del fondo
+        #    - Usa máscara para aplicar solo los módulos negros
+        #    - Desenfoque suave para evitar bordes artificiales
+        from PIL import ImageOps, ImageStat, ImageFilter
+
+        # Región donde irá el QR
+        region_box = (qr_x, qr_y, qr_x + qr_img.width, qr_y + qr_img.height)
+        region = background.crop(region_box)
+
+        # Color promedio del fondo en esa zona
+        avg = tuple(int(v) for v in ImageStat.Stat(region.convert("RGB")).mean)
+
+        def darker(color, factor=0.25):
+            return tuple(max(0, min(255, int(c * factor))) for c in color)
+
+        def slightly_lighter(color, factor=1.03):
+            return tuple(max(0, min(255, int(c * factor))) for c in color)
+
+        ink_color = darker(avg, 0.20)              # tinta (oscuro del fondo)
+        paper_color = slightly_lighter(avg, 1.03)  # papel ligeramente más claro
+
+        # Tinte del QR hacia los colores del fondo
+        qr_gray = qr_img.convert("L")
+        qr_tinted = ImageOps.colorize(qr_gray, black=ink_color, white=paper_color).convert("RGBA")
+
+        # Borde y enfoque más natural
+        qr_tinted = qr_tinted.filter(ImageFilter.GaussianBlur(0.6))
+
+        # Máscara solo para módulos negros (evita pegar un rectángulo blanco)
+        qr_mask = ImageOps.invert(qr_gray)
+        qr_mask = qr_mask.filter(ImageFilter.GaussianBlur(0.4))
+
+        # Componer sobre la región manteniendo textura y color del fondo
+        region_with_qr = Image.composite(qr_tinted, region.convert("RGBA"), qr_mask)
+
+        # Volver a colocar la región resultante en el fondo
+        background.paste(region_with_qr, (qr_x, qr_y))
 
         # --- Agregar texto ---
         draw = ImageDraw.Draw(background)
