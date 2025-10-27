@@ -253,7 +253,7 @@ def generate_invitation_with_qr(token):
 
         # 📍 Posicionar más a la derecha
         qr_x = (background.width - qr_img.width) // 2 + 43
-        qr_y = int(background.height * 0.46)
+        qr_y = int(background.height * 0.49)
 
         # 🧩 Integración realista del QR con el fondo
         #    - Muestrea color promedio del área
@@ -335,14 +335,14 @@ def generate_invitation_with_qr(token):
         creepster_path = find_font('Creepster-Regular.ttf', creepster_path)
 
         # Cargar fuentes con tamaños específicos
-        # Título: Anton 160pt | Subtítulo: Creepster 60pt | Warning: Creepster 32pt
+        # Título: Anton 160pt | Subtítulo: Anton 60pt | Warning: Creepster 32pt
         try:
             title_font = ImageFont.truetype(anton_path, 160)      # URUBO WEST - Anton
-            date_font = ImageFont.truetype(creepster_path, 60)    # 1º DE NOVIEMBRE - Creepster
+            date_font = ImageFont.truetype(anton_path, 60)        # 1º DE NOVIEMBRE - Anton
             font_small = ImageFont.truetype(creepster_path, 32)   # Warning - Creepster
             print(f"✓ Fuentes cargadas:")
             print(f"  - Título: Anton 160pt (bold, condensed)")
-            print(f"  - Subtítulo: Creepster 60pt")
+            print(f"  - Subtítulo: Anton 60pt (bold, condensed)")
             print(f"  - Warning: Creepster 32pt")
         except Exception as e:
             print(f"❌ ERROR: No se pudieron cargar las fuentes: {e}")
@@ -391,7 +391,7 @@ def generate_invitation_with_qr(token):
             char_width = char_bbox[2] - char_bbox[0]
             current_x += char_width + letter_spacing
 
-        # --- Subtítulo "1º DE NOVIEMBRE" con Creepster 60pt ---
+        # --- Subtítulo "1º DE NOVIEMBRE" con Anton 60pt ---
         date_text = "1º DE NOVIEMBRE"
         
         # Crear capa temporal para sombra del subtítulo
@@ -407,7 +407,7 @@ def generate_invitation_with_qr(token):
         date_width_with_spacing -= letter_spacing
         
         date_x = (background.width - date_width_with_spacing) // 2
-        date_y = title_y + 130  # Espaciado vertical: 15-20px respecto al título (ajustado por altura de Creepster)
+        date_y = title_y + 180  # Espaciado vertical aumentado para dar más espacio entre título y subtítulo
         
         # Dibujar sombra suave para subtítulo (mismo estilo que título)
         current_x_shadow_date = date_x
