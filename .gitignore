@@ -12,3 +12,7 @@ venv/
 # Migration files
 migrations/
 
+# Test artifacts and previews
+/test/
+/test/**
+

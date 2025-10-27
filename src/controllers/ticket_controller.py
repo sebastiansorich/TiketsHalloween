@@ -204,12 +204,48 @@ def generate_qr(token):
     except Exception as e:
         return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
 
-def generate_invitation_with_qr(token):
+def generate_invitation_with_qr(token, options=None):
     try:
         from PIL import Image, ImageDraw, ImageFont
         import qrcode, os, io
-        import requests
         from flask import send_file
+
+        # --- Opciones de ajuste (parametrización para móviles y diseño) ---
+        opts = options or {}
+        # Resolución/ratio objetivo (por defecto 1080x1920, 9:16)
+        target_width = int(opts.get('output_width', 1080))
+        target_height = int(opts.get('output_height', 1920))
+        target_ratio = float(opts.get('target_ratio', target_width / target_height))
+
+        # Archivos/recursos
+        base_dir = os.path.abspath(os.path.dirname(__file__))
+        background_filename = opts.get('background_filename', 'invitation_background.png')
+        image_path = os.path.join(base_dir, '..', '..', 'static', background_filename)
+
+        # QR y texto
+        qr_size = tuple(opts.get('qr_size', (400, 400)))
+        qr_angle_deg = float(opts.get('qr_angle', 5.5))
+        qr_offset_x = int(opts.get('qr_offset_x', 52))
+        qr_y_absolute = opts.get('qr_y')
+        qr_y_factor = float(opts.get('qr_y_factor', 0.50))
+
+        # Tipografías y posiciones
+        title_size = int(opts.get('title_font_size', 120))
+        date_size = int(opts.get('date_font_size', 60))
+        warning_size = int(opts.get('warning_font_size', 50))
+        entry_font_size = int(opts.get('entry_font_size', 110))
+        letter_spacing = int(opts.get('letter_spacing', 0))
+        title_y_pos = int(opts.get('title_y', 80))
+        date_gap_y = int(opts.get('date_gap_y', 140))
+        entry_offset_right = int(opts.get('entry_offset_right', 32))
+        entry_above_qr_px = int(opts.get('entry_above_qr_px',200))
+        pass_gap_px = int(opts.get('pass_gap_px', 100))
+
+        # Warning (aviso)
+        warning_margin_bottom = int(opts.get('warning_margin_bottom', 40))
+        warning_padding_x = int(opts.get('warning_padding_x', 20))
+        warning_padding_y = int(opts.get('warning_padding_y', 14))
+        jpeg_quality = int(opts.get('jpeg_quality', 95))
 
         # --- Crear el código QR ---
         qr = qrcode.QRCode(
@@ -223,12 +259,10 @@ def generate_invitation_with_qr(token):
         qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGBA")
 
         # --- Cargar imagen base ---
-        base_dir = os.path.abspath(os.path.dirname(__file__))
-        image_path = os.path.join(base_dir, '..', '..', 'static', 'invitation_background.png')
         background = Image.open(image_path).convert("RGBA")
 
-        # --- Ajustar proporción para móviles (9:16 es ideal para pantallas móviles) ---
-        mobile_ratio = 9 / 16  # Proporción vertical para móviles
+        # --- Ajustar proporción para móviles (por defecto 9:16) ---
+        mobile_ratio = target_ratio
         bg_width, bg_height = background.size
         current_ratio = bg_width / bg_height
 
@@ -243,19 +277,18 @@ def generate_invitation_with_qr(token):
             top = (bg_height - new_height) // 2
             background = background.crop((0, top, bg_width, top + new_height))
 
-        # --- Redimensionar para móviles (1080x1920 es Full HD móvil) ---
-        background = background.resize((1080, 1920))
+        # --- Redimensionar a la resolución objetivo ---
+        background = background.resize((target_width, target_height))
 
         # --- Tamaño y posición del QR ---
-        qr_size = (400, 400)
         qr_img = qr_img.resize(qr_size)
 
         # 🔄 Rotar en dirección opuesta (hacia la izquierda) sin fondo negro
-        qr_img = qr_img.rotate(5.5, expand=True, fillcolor=(255, 255, 255, 0))
+        qr_img = qr_img.rotate(qr_angle_deg, expand=True, fillcolor=(255, 255, 255, 0))
 
         # 📍 Posicionar más a la derecha
-        qr_x = (background.width - qr_img.width) // 2 + 43
-        qr_y = int(background.height * 0.60)
+        qr_x = (background.width - qr_img.width) // 2 + qr_offset_x
+        qr_y = int(background.height * qr_y_factor) if qr_y_absolute is None else int(qr_y_absolute)
 
         # 🧩 Integración realista del QR con el fondo
         #    - Muestrea color promedio del área
@@ -337,9 +370,9 @@ def generate_invitation_with_qr(token):
         # Cargar fuentes con tamaños específicos
         # Título: DM Serif Display 160pt | Subtítulo: DM Serif Display 60pt | Warning: DM Serif Display 32pt
         try:
-            title_font = ImageFont.truetype(dmserif_path, 120)   # URUBO WEST - DM Serif Display
-            date_font = ImageFont.truetype(dmserif_path, 60)     # 1º DE NOVIEMBRE - DM Serif Display
-            font_small = ImageFont.truetype(dmserif_path, 50)    # Warning - DM Serif Display
+            title_font = ImageFont.truetype(dmserif_path, title_size)   # URUBO WEST - DM Serif Display
+            date_font = ImageFont.truetype(dmserif_path, date_size)     # 1º DE NOVIEMBRE - DM Serif Display
+            font_small = ImageFont.truetype(dmserif_path, warning_size) # Warning - DM Serif Display
             print(f"✓ Fuentes cargadas:")
             print(f"  - Título: DM Serif Display 160pt (elegante, serif)")
             print(f"  - Subtítulo: DM Serif Display 60pt (elegante, serif)")
@@ -355,8 +388,7 @@ def generate_invitation_with_qr(token):
         temp_layer = Image.new('RGBA', background.size, (0, 0, 0, 0))
         temp_draw = ImageDraw.Draw(temp_layer)
         
-        # Calcular ancho con espaciado de letras (+5px según especificaciones)
-        letter_spacing = 0
+        # Calcular ancho con espaciado de letras
         title_width_with_spacing = 0
         for char in title_text:
             char_bbox = draw.textbbox((0, 0), char, font=title_font)
@@ -365,7 +397,7 @@ def generate_invitation_with_qr(token):
         title_width_with_spacing -= letter_spacing  # Quitar espaciado extra del último carácter
         
         title_x = (background.width - title_width_with_spacing) // 2
-        title_y = 80
+        title_y = title_y_pos
         
         # Dibujar sombra suave con desenfoque (especificaciones: desplazamiento 2px, desenfoque 4px, opacidad 60%)
         shadow_offset = 2
@@ -407,7 +439,7 @@ def generate_invitation_with_qr(token):
         date_width_with_spacing -= letter_spacing
         
         date_x = (background.width - date_width_with_spacing) // 2
-        date_y = title_y + 140  # Espaciado vertical aumentado para dar más espacio entre título y subtítulo
+        date_y = title_y + date_gap_y  # Espaciado vertical configurable
         
         # Dibujar sombra suave para subtítulo (mismo estilo que título)
         current_x_shadow_date = date_x
@@ -432,130 +464,10 @@ def generate_invitation_with_qr(token):
             char_width = char_bbox[2] - char_bbox[0]
             current_x_date += char_width + letter_spacing
 
-        # --- Texto "ENTRY PASS" en rojo arriba del QR (dividido en dos líneas) ---
-        entry_text = "ENTRY"
-        pass_text = " PASS"
-        
-        # Crear fuente más grande para ENTRY PASS (usando date_font que es más grande)
-        entry_font = ImageFont.truetype(dmserif_path, 70)     # Más grande que font_small (40)
-        
-        # Calcular ancho de cada línea con espaciado de letras (+5px, igual que otros textos)
-        entry_width_with_spacing = 0
-        for char in entry_text:
-            char_bbox = draw.textbbox((0, 0), char, font=entry_font)
-            char_width = char_bbox[2] - char_bbox[0]
-            entry_width_with_spacing += char_width + letter_spacing
-        entry_width_with_spacing -= letter_spacing
-        
-        pass_width_with_spacing = 0
-        for char in pass_text:
-            char_bbox = draw.textbbox((0, 0), char, font=entry_font)
-            char_width = char_bbox[2] - char_bbox[0]
-            pass_width_with_spacing += char_width + letter_spacing
-        pass_width_with_spacing -= letter_spacing
-        
-        # Usar el ancho mayor para centrar ambas líneas
-        max_width = max(entry_width_with_spacing, pass_width_with_spacing)
-        
-        entry_x = (background.width - max_width) // 2 + 8  # +8px hacia la derecha
-        entry_y = qr_y - 50  # +60px hacia arriba
-        pass_y = entry_y + 30  # 70px debajo de ENTRY
-        
-        # Calcular el espacio necesario para el texto rotado
-        # Con rotación de 5.5 grados, necesitamos más espacio horizontal
-        import math
-        rotation_angle = math.radians(5.5)
-        
-        # Calcular el ancho total del texto (ENTRY + PASS)
-        total_text_width = max(entry_width_with_spacing, pass_width_with_spacing)
-        total_text_height = 100  # Espacio aproximado para ambas líneas
-        
-        # Calcular las dimensiones después de la rotación
-        rotated_width = int(abs(total_text_width * math.cos(rotation_angle)) + abs(total_text_height * math.sin(rotation_angle)))
-        rotated_height = int(abs(total_text_width * math.sin(rotation_angle)) + abs(total_text_height * math.cos(rotation_angle)))
-        
-        # Crear imagen temporal con espacio suficiente para la rotación
-        temp_size = (background.width + rotated_width + 100, background.height + rotated_height + 100)
-        temp_layer_entry = Image.new('RGBA', temp_size, (0, 0, 0, 0))
-        temp_draw_entry = ImageDraw.Draw(temp_layer_entry)
-        
-        # Centrar el texto en la imagen temporal
-        temp_entry_x = (temp_size[0] - total_text_width) // 2
-        temp_entry_y = (temp_size[1] - total_text_height) // 2
-        
-        # Dibujar sombra suave para ENTRY (primera línea)
-        current_x_shadow_entry = temp_entry_x
-        for char in entry_text:
-            temp_draw_entry.text((current_x_shadow_entry + shadow_offset, temp_entry_y + shadow_offset), char, 
-                               font=entry_font, fill=(0, 0, 0, 153))  # Opacidad 60%
-            char_bbox = draw.textbbox((0, 0), char, font=entry_font)
-            char_width = char_bbox[2] - char_bbox[0]
-            current_x_shadow_entry += char_width + letter_spacing
-        
-        # Dibujar sombra suave para PASS (segunda línea)
-        temp_pass_y = temp_entry_y + 30  # 30px debajo de ENTRY (ajustado según tus cambios)
-        current_x_shadow_pass = temp_entry_x
-        for char in pass_text:
-            temp_draw_entry.text((current_x_shadow_pass + shadow_offset, temp_pass_y + shadow_offset), char, 
-                               font=entry_font, fill=(0, 0, 0, 153))  # Opacidad 60%
-            char_bbox = draw.textbbox((0, 0), char, font=entry_font)
-            char_width = char_bbox[2] - char_bbox[0]
-            current_x_shadow_pass += char_width + letter_spacing
-        
-        # Aplicar desenfoque gaussiano a la sombra del ENTRY PASS
-        temp_layer_entry = temp_layer_entry.filter(ImageFilter.GaussianBlur(4))
-        
-        # Rotar la capa de sombra con la misma inclinación que el QR (5.5 grados)
-        temp_layer_entry = temp_layer_entry.rotate(5.5, expand=True, fillcolor=(255, 255, 255, 0))
-        
-        # Recortar la imagen rotada al tamaño original y pegar en la posición correcta
-        final_width, final_height = temp_layer_entry.size
-        crop_x = (final_width - background.width) // 2
-        crop_y = (final_height - background.height) // 2
-        temp_layer_entry = temp_layer_entry.crop((crop_x, crop_y, crop_x + background.width, crop_y + background.height))
-        
-        # Componer la sombra rotada
-        background = Image.alpha_composite(background, temp_layer_entry)
-        draw = ImageDraw.Draw(background)
-        
-        # Crear capa temporal para el texto principal (mismo tamaño que la sombra)
-        temp_layer_text = Image.new('RGBA', temp_size, (0, 0, 0, 0))
-        temp_draw_text = ImageDraw.Draw(temp_layer_text)
-        
-        # Dibujar ENTRY con espaciado (rojo #FF0000) - primera línea
-        current_x_entry = temp_entry_x
-        for char in entry_text:
-            temp_draw_text.text((current_x_entry, temp_entry_y), char, 
-                              font=entry_font, fill=(255, 0, 0, 255))  # Rojo puro
-            char_bbox = draw.textbbox((0, 0), char, font=entry_font)
-            char_width = char_bbox[2] - char_bbox[0]
-            current_x_entry += char_width + letter_spacing
-        
-        # Dibujar PASS con espaciado (rojo #FF0000) - segunda línea
-        temp_pass_y = temp_entry_y + 30  # 30px debajo de ENTRY (ajustado según tus cambios)
-        current_x_pass = temp_entry_x
-        for char in pass_text:
-            temp_draw_text.text((current_x_pass, temp_pass_y), char, 
-                              font=entry_font, fill=(255, 0, 0, 255))  # Rojo puro
-            char_bbox = draw.textbbox((0, 0), char, font=entry_font)
-            char_width = char_bbox[2] - char_bbox[0]
-            current_x_pass += char_width + letter_spacing
-        
-        # Rotar el texto principal con la misma inclinación que el QR (5.5 grados)
-        temp_layer_text = temp_layer_text.rotate(5.5, expand=True, fillcolor=(255, 255, 255, 0))
-        
-        # Recortar la imagen rotada al tamaño original y pegar en la posición correcta
-        final_width, final_height = temp_layer_text.size
-        crop_x = (final_width - background.width) // 2
-        crop_y = (final_height - background.height) // 2
-        temp_layer_text = temp_layer_text.crop((crop_x, crop_y, crop_x + background.width, crop_y + background.height))
-        
-        # Componer el texto rotado
-        background = Image.alpha_composite(background, temp_layer_text)
-        draw = ImageDraw.Draw(background)
+        # ENTRY PASS deshabilitado a pedido
 
         # --- Aviso sobre unicidad del ticket ---
-        warning_text = "Esta imagen es única y personal, no debe ser compartida."
+        warning_text = "Esta imagen es única y personal. No debe ser compartida."
 
         # Envoltura robusta: medir ancho por línea con textbbox (sin usar APIs nuevas)
         max_text_width = background.width - 80
@@ -585,11 +497,11 @@ def generate_invitation_with_qr(token):
         block_height = sum((h for w, h in line_sizes)) + spacing * (len(lines) - 1 if lines else 0)
 
         warning_x = (background.width - block_width) // 2
-        warning_y = background.height - (block_height + 40)
+        warning_y = background.height - (block_height + warning_margin_bottom)
 
         # Fondo semi-transparente con padding
-        padding_x = 20
-        padding_y = 14
+        padding_x = warning_padding_x
+        padding_y = warning_padding_y
         warning_rect = [
             warning_x - padding_x,
             warning_y - padding_y,
@@ -612,7 +524,7 @@ def generate_invitation_with_qr(token):
         
         # --- Guardar en memoria como JPEG con alta calidad ---
         img_io = io.BytesIO()
-        rgb_background.save(img_io, "JPEG", quality=95, optimize=True)
+        rgb_background.save(img_io, "JPEG", quality=jpeg_quality, optimize=True)
         img_io.seek(0)
 
         return send_file(img_io, mimetype="image/jpeg")
