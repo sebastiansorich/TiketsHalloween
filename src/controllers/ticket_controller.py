@@ -306,11 +306,10 @@ def generate_invitation_with_qr(token):
         # Obtener directorio del proyecto
         project_dir = os.path.abspath(os.path.join(base_dir, '..', '..'))
         
-        # 💪 Cargar fuentes Anton (título bold) y Creepster (subtítulo)
+        # 📚 Cargar fuente DM Serif Display para título, subtítulo y warning
         # IMPORTANTE: En Vercel (serverless), las fuentes DEBEN estar en el repositorio
         fonts_dir = os.path.join(project_dir, 'static', 'fonts')
-        anton_path = os.path.join(fonts_dir, 'Anton-Regular.ttf')
-        creepster_path = os.path.join(fonts_dir, 'Creepster-Regular.ttf')
+        dmserif_path = os.path.join(fonts_dir, 'DMSerifDisplay-Regular.ttf')
 
         def find_font(font_name, primary_path):
             """Buscar fuente en múltiples rutas para compatibilidad"""
@@ -330,25 +329,24 @@ def generate_invitation_with_qr(token):
             
             raise Exception(f"Fuente {font_name} no encontrada en static/fonts/")
         
-        # Buscar ambas fuentes
-        anton_path = find_font('Anton-Regular.ttf', anton_path)
-        creepster_path = find_font('Creepster-Regular.ttf', creepster_path)
+        # Buscar fuente DM Serif Display
+        dmserif_path = find_font('DMSerifDisplay-Regular.ttf', dmserif_path)
 
         # Cargar fuentes con tamaños específicos
-        # Título: Anton 160pt | Subtítulo: Anton 60pt | Warning: Creepster 32pt
+        # Título: DM Serif Display 160pt | Subtítulo: DM Serif Display 60pt | Warning: DM Serif Display 32pt
         try:
-            title_font = ImageFont.truetype(anton_path, 160)      # URUBO WEST - Anton
-            date_font = ImageFont.truetype(anton_path, 60)        # 1º DE NOVIEMBRE - Anton
-            font_small = ImageFont.truetype(creepster_path, 32)   # Warning - Creepster
+            title_font = ImageFont.truetype(dmserif_path, 160)   # URUBO WEST - DM Serif Display
+            date_font = ImageFont.truetype(dmserif_path, 60)     # 1º DE NOVIEMBRE - DM Serif Display
+            font_small = ImageFont.truetype(dmserif_path, 32)    # Warning - DM Serif Display
             print(f"✓ Fuentes cargadas:")
-            print(f"  - Título: Anton 160pt (bold, condensed)")
-            print(f"  - Subtítulo: Anton 60pt (bold, condensed)")
-            print(f"  - Warning: Creepster 32pt")
+            print(f"  - Título: DM Serif Display 160pt (elegante, serif)")
+            print(f"  - Subtítulo: DM Serif Display 60pt (elegante, serif)")
+            print(f"  - Warning: DM Serif Display 32pt (elegante, serif)")
         except Exception as e:
             print(f"❌ ERROR: No se pudieron cargar las fuentes: {e}")
             raise Exception(f"Error cargando fuentes: {e}")
 
-        # --- Texto "URUBO WEST" con Anton 160pt (bold, condensed) y espaciado ---
+        # --- Texto "URUBO WEST" con DM Serif Display 160pt y espaciado ---
         title_text = "URUBO WEST"
         
         # Crear capa temporal para aplicar desenfoque a la sombra
@@ -391,7 +389,7 @@ def generate_invitation_with_qr(token):
             char_width = char_bbox[2] - char_bbox[0]
             current_x += char_width + letter_spacing
 
-        # --- Subtítulo "1º DE NOVIEMBRE" con Anton 60pt ---
+        # --- Subtítulo "1º DE NOVIEMBRE" con DM Serif Display 60pt ---
         date_text = "1º DE NOVIEMBRE"
         
         # Crear capa temporal para sombra del subtítulo
