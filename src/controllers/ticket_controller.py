@@ -335,8 +335,8 @@ def generate_invitation_with_qr(token):
         # Cargar fuentes con tamaños específicos
         # Título: DM Serif Display 160pt | Subtítulo: DM Serif Display 60pt | Warning: DM Serif Display 32pt
         try:
-            title_font = ImageFont.truetype(dmserif_path, 160)   # URUBO WEST - DM Serif Display
-            date_font = ImageFont.truetype(dmserif_path, 60)     # 1º DE NOVIEMBRE - DM Serif Display
+            title_font = ImageFont.truetype(dmserif_path, 110)   # URUBO WEST - DM Serif Display
+            date_font = ImageFont.truetype(dmserif_path, 50)     # 1º DE NOVIEMBRE - DM Serif Display
             font_small = ImageFont.truetype(dmserif_path, 32)    # Warning - DM Serif Display
             print(f"✓ Fuentes cargadas:")
             print(f"  - Título: DM Serif Display 160pt (elegante, serif)")
@@ -445,7 +445,7 @@ def generate_invitation_with_qr(token):
             warning_x + warning_width + padding, 
             warning_y + 45 + padding
         ]
-        draw.rectangle(warning_rect, fill=(0, 0, 0, 180))
+        draw.rectangle(warning_rect, fill=(0, 0, 0, 220))
         
         draw.text((warning_x, warning_y), warning_text, 
                  font=font_small, fill=(255, 255, 255, 255))
