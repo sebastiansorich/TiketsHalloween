@@ -399,27 +399,6 @@ def generate_invitation_with_qr(token):
         draw.text((date_x, date_y), date_text, 
                  font=date_font, fill=(255, 255, 255, 255))  # Texto blanco
 
-        # --- Texto "ENTRY PASS" encima del QR ---
-        entry_pass_text = "ENTRY PASS"
-        # Cargar fuente para ENTRY PASS (más pequeña, estilo seguridad)
-        try:
-            entry_font = ImageFont.truetype(nosifer_path if os.path.isfile(nosifer_path) else font_paths[0], 48)
-        except Exception:
-            entry_font = font_small
-        
-        entry_bbox = draw.textbbox((0, 0), entry_pass_text, font=entry_font)
-        entry_width = entry_bbox[2] - entry_bbox[0]
-        entry_x = (background.width - entry_width) // 2
-        entry_y = qr_y - 80  # Encima del QR
-        
-        # Efecto de letras de seguridad: sombra negra + texto amarillo brillante
-        security_yellow = (255, 215, 0, 255)  # Amarillo dorado
-        shadow_offset_entry = 3
-        draw.text((entry_x + shadow_offset_entry, entry_y + shadow_offset_entry), entry_pass_text, 
-                 font=entry_font, fill=(0, 0, 0, 220))  # Sombra negra
-        draw.text((entry_x, entry_y), entry_pass_text, 
-                 font=entry_font, fill=security_yellow)  # Amarillo de seguridad
-
         # --- Aviso sobre unicidad del ticket ---
         warning_text = "Este ticket es único y personal. Debe cuidarse y no compartirse."
         warning_bbox = draw.textbbox((0, 0), warning_text, font=font_small)
