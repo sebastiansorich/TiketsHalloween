@@ -253,7 +253,7 @@ def generate_invitation_with_qr(token):
 
         # 📍 Posicionar más a la derecha
         qr_x = (background.width - qr_img.width) // 2 + 43
-        qr_y = int(background.height * 0.55)
+        qr_y = int(background.height * 0.65)
 
         # 🧩 Integración realista del QR con el fondo
         #    - Muestrea color promedio del área
@@ -430,22 +430,34 @@ def generate_invitation_with_qr(token):
             char_width = char_bbox[2] - char_bbox[0]
             current_x_date += char_width + letter_spacing
 
-        # --- Texto "ENTRY PASS" en rojo arriba del QR ---
-        entry_pass_text = "ENTRY PASS"
+        # --- Texto "ENTRY PASS" en rojo arriba del QR (dividido en dos líneas) ---
+        entry_text = "ENTRY"
+        pass_text = " PASS"
         
         # Crear fuente más grande para ENTRY PASS (usando date_font que es más grande)
         entry_font = ImageFont.truetype(dmserif_path, 60)     # Más grande que font_small (40)
         
-        # Calcular ancho con espaciado de letras (+5px, igual que otros textos)
+        # Calcular ancho de cada línea con espaciado de letras (+5px, igual que otros textos)
         entry_width_with_spacing = 0
-        for char in entry_pass_text:
+        for char in entry_text:
             char_bbox = draw.textbbox((0, 0), char, font=entry_font)
             char_width = char_bbox[2] - char_bbox[0]
             entry_width_with_spacing += char_width + letter_spacing
         entry_width_with_spacing -= letter_spacing
         
-        entry_x = (background.width - entry_width_with_spacing) // 2 + 8  # +8px hacia la derecha
+        pass_width_with_spacing = 0
+        for char in pass_text:
+            char_bbox = draw.textbbox((0, 0), char, font=entry_font)
+            char_width = char_bbox[2] - char_bbox[0]
+            pass_width_with_spacing += char_width + letter_spacing
+        pass_width_with_spacing -= letter_spacing
+        
+        # Usar el ancho mayor para centrar ambas líneas
+        max_width = max(entry_width_with_spacing, pass_width_with_spacing)
+        
+        entry_x = (background.width - max_width) // 2 + 8  # +8px hacia la derecha
         entry_y = qr_y - 60  # +60px hacia arriba
+        pass_y = entry_y + 70  # 70px debajo de ENTRY
         
         # Crear una imagen temporal más grande para la rotación
         temp_size = (background.width + 200, background.height + 200)
@@ -456,14 +468,24 @@ def generate_invitation_with_qr(token):
         temp_entry_x = entry_x + 100
         temp_entry_y = entry_y + 100
         
-        # Dibujar sombra suave para ENTRY PASS
+        # Dibujar sombra suave para ENTRY (primera línea)
         current_x_shadow_entry = temp_entry_x
-        for char in entry_pass_text:
+        for char in entry_text:
             temp_draw_entry.text((current_x_shadow_entry + shadow_offset, temp_entry_y + shadow_offset), char, 
-                               font=entry_font, fill=(0, 0, 0, 255))  # Opacidad 60%
+                               font=entry_font, fill=(0, 0, 0, 153))  # Opacidad 60%
             char_bbox = draw.textbbox((0, 0), char, font=entry_font)
             char_width = char_bbox[2] - char_bbox[0]
             current_x_shadow_entry += char_width + letter_spacing
+        
+        # Dibujar sombra suave para PASS (segunda línea)
+        temp_pass_y = temp_entry_y + 70  # 70px debajo de ENTRY
+        current_x_shadow_pass = temp_entry_x
+        for char in pass_text:
+            temp_draw_entry.text((current_x_shadow_pass + shadow_offset, temp_pass_y + shadow_offset), char, 
+                               font=entry_font, fill=(0, 0, 0, 153))  # Opacidad 60%
+            char_bbox = draw.textbbox((0, 0), char, font=entry_font)
+            char_width = char_bbox[2] - char_bbox[0]
+            current_x_shadow_pass += char_width + letter_spacing
         
         # Aplicar desenfoque gaussiano a la sombra del ENTRY PASS
         temp_layer_entry = temp_layer_entry.filter(ImageFilter.GaussianBlur(4))
@@ -485,14 +507,24 @@ def generate_invitation_with_qr(token):
         temp_layer_text = Image.new('RGBA', temp_size, (0, 0, 0, 0))
         temp_draw_text = ImageDraw.Draw(temp_layer_text)
         
-        # Dibujar ENTRY PASS con espaciado (rojo #FF0000)
+        # Dibujar ENTRY con espaciado (rojo #FF0000) - primera línea
         current_x_entry = temp_entry_x
-        for char in entry_pass_text:
+        for char in entry_text:
             temp_draw_text.text((current_x_entry, temp_entry_y), char, 
                               font=entry_font, fill=(255, 0, 0, 255))  # Rojo puro
             char_bbox = draw.textbbox((0, 0), char, font=entry_font)
             char_width = char_bbox[2] - char_bbox[0]
             current_x_entry += char_width + letter_spacing
+        
+        # Dibujar PASS con espaciado (rojo #FF0000) - segunda línea
+        temp_pass_y = temp_entry_y + 70  # 70px debajo de ENTRY
+        current_x_pass = temp_entry_x
+        for char in pass_text:
+            temp_draw_text.text((current_x_pass, temp_pass_y), char, 
+                              font=entry_font, fill=(255, 0, 0, 255))  # Rojo puro
+            char_bbox = draw.textbbox((0, 0), char, font=entry_font)
+            char_width = char_bbox[2] - char_bbox[0]
+            current_x_pass += char_width + letter_spacing
         
         # Rotar el texto principal con la misma inclinación que el QR (5.5 grados)
         temp_layer_text = temp_layer_text.rotate(5.5, expand=True, fillcolor=(255, 255, 255, 0))
