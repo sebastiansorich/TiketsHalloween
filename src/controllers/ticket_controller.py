@@ -253,7 +253,7 @@ def generate_invitation_with_qr(token):
 
         # 📍 Posicionar más a la derecha
         qr_x = (background.width - qr_img.width) // 2 + 45
-        qr_y = int(background.height * 0.50)
+        qr_y = int(background.height * 0.45)
 
         # 🧩 Integración realista del QR con el fondo
         #    - Muestrea color promedio del área
@@ -306,14 +306,14 @@ def generate_invitation_with_qr(token):
         # Obtener directorio del proyecto
         project_dir = os.path.abspath(os.path.join(base_dir, '..', '..'))
         
-        # Asegurar fuentes prioritarias (Creepster para título, Nosifer para fecha)
+        # 🎃 Asegurar fuente Creepster EXCLUSIVAMENTE (según especificaciones)
         fonts_dir = os.path.join(project_dir, 'static', 'fonts')
         os.makedirs(fonts_dir, exist_ok=True)
         creepster_path = os.path.join(fonts_dir, 'Creepster-Regular.ttf')
-        nosifer_path = os.path.join(fonts_dir, 'Nosifer-Regular.ttf')
 
         # Descargar Creepster si no existe
         if not os.path.isfile(creepster_path):
+            print("⚠ Creepster no encontrada, descargando...")
             creepster_urls = [
                 'https://github.com/google/fonts/raw/main/ofl/creepster/Creepster-Regular.ttf',
                 'https://raw.githubusercontent.com/google/fonts/main/ofl/creepster/Creepster-Regular.ttf'
@@ -324,79 +324,33 @@ def generate_invitation_with_qr(token):
                     if resp.status_code == 200 and resp.content:
                         with open(creepster_path, 'wb') as f:
                             f.write(resp.content)
+                        print(f"✓ Creepster descargada exitosamente: {creepster_path}")
                         break
-                except Exception:
+                except Exception as e:
+                    print(f"⚠ Error descargando desde {url}: {e}")
                     continue
 
-        # Descargar Nosifer si no existe
-        if not os.path.isfile(nosifer_path):
-            nosifer_urls = [
-                'https://github.com/google/fonts/raw/main/ofl/nosifer/Nosifer-Regular.ttf',
-                'https://raw.githubusercontent.com/google/fonts/main/ofl/nosifer/Nosifer-Regular.ttf'
-            ]
-            for url in nosifer_urls:
-                try:
-                    resp = requests.get(url, timeout=10)
-                    if resp.status_code == 200 and resp.content:
-                        with open(nosifer_path, 'wb') as f:
-                            f.write(resp.content)
-                        break
-                except Exception:
-                    continue
-
-        # Intentar cargar Creepster para título (110pt según especificaciones)
+        # Cargar fuentes Creepster con tamaños específicos
+        # Título: 110pt | Subtítulo: 60pt | Warning: 32pt
         title_font = None
         date_font = None
+        font_small = None
         
         if os.path.isfile(creepster_path):
             try:
-                title_font = ImageFont.truetype(creepster_path, 110)
-                print(f"✓ Fuente Creepster cargada para título: {creepster_path}")
+                title_font = ImageFont.truetype(creepster_path, 110)  # URUBO WEST
+                date_font = ImageFont.truetype(creepster_path, 60)    # 1º de noviembre
+                font_small = ImageFont.truetype(creepster_path, 32)   # Warning text
+                print(f"✓ Fuente Creepster cargada correctamente")
+                print(f"  - Título: 110pt")
+                print(f"  - Subtítulo: 60pt")
+                print(f"  - Warning: 32pt")
             except Exception as e:
-                print(f"⚠ Error cargando Creepster: {e}")
-        
-        # Cargar Nosifer para fecha
-        if os.path.isfile(nosifer_path):
-            try:
-                date_font = ImageFont.truetype(nosifer_path, 55)
-                font_small = ImageFont.truetype(nosifer_path, 32)
-                print(f"✓ Fuente Nosifer cargada para fecha: {nosifer_path}")
-            except Exception as e:
-                print(f"⚠ Error cargando Nosifer: {e}")
-        
-        # Si Creepster no se cargó, intentar fuentes alternativas para el título
-        if title_font is None:
-            font_paths = [
-                os.path.join(project_dir, 'static', 'fonts', 'Horror.ttf'),
-                os.path.join(project_dir, 'static', 'fonts', 'Creepster.ttf'),
-                os.path.join(project_dir, 'static', 'fonts', 'Arial-Bold.ttf'),
-                os.path.join(project_dir, 'static', 'fonts', 'Arial.ttf'),
-                "C:/Windows/Fonts/ariblk.ttf",  # Arial Black (más gruesa)
-                "C:/Windows/Fonts/arialbd.ttf",  # Arial Bold
-                "C:/Windows/Fonts/arial.ttf",
-                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-                "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-                "/System/Library/Fonts/Helvetica.ttc",
-                "arial.ttf"
-            ]
-            
-            for font_path in font_paths:
-                try:
-                    title_font = ImageFont.truetype(font_path, 90)
-                    date_font = ImageFont.truetype(font_path, 55)
-                    font_small = ImageFont.truetype(font_path, 32)
-                    print(f"✓ Fuente alternativa cargada: {font_path}")
-                    break
-                except Exception:
-                    continue
-        
-        # Si no se encontró ninguna fuente, usar load_default
-        if title_font is None:
-            print("⚠ No se encontró fuente TrueType, usando fuente por defecto")
-            title_font = ImageFont.load_default()
-            date_font = ImageFont.load_default()
-            font_small = ImageFont.load_default()
+                print(f"❌ ERROR CRÍTICO: No se pudo cargar Creepster: {e}")
+                raise Exception(f"No se pudo cargar la fuente Creepster requerida: {e}")
+        else:
+            print(f"❌ ERROR CRÍTICO: Creepster no existe en {creepster_path}")
+            raise Exception(f"Fuente Creepster no disponible en {creepster_path}")
 
         # --- Texto "URUBO WEST" con Creepster y espaciado ---
         title_text = "URUBO WEST"
@@ -441,17 +395,46 @@ def generate_invitation_with_qr(token):
             char_width = char_bbox[2] - char_bbox[0]
             current_x += char_width + letter_spacing
 
-        # --- Fecha de la fiesta ---
-        date_text = "1º de noviembre"
-        date_bbox = draw.textbbox((0, 0), date_text, font=date_font)
-        date_width = date_bbox[2] - date_bbox[0]
-        date_x = (background.width - date_width) // 2
-        date_y = title_y + 120
+        # --- Subtítulo "1º DE NOVIEMBRE" con Creepster (60pt) ---
+        date_text = "1º DE NOVIEMBRE"
         
-        draw.text((date_x + shadow_offset, date_y + shadow_offset), date_text, 
-                 font=date_font, fill=(0, 0, 0, 200))  # Sombra más oscura
-        draw.text((date_x, date_y), date_text, 
-                 font=date_font, fill=(255, 255, 255, 255))  # Texto blanco
+        # Crear capa temporal para sombra del subtítulo
+        temp_layer_date = Image.new('RGBA', background.size, (0, 0, 0, 0))
+        temp_draw_date = ImageDraw.Draw(temp_layer_date)
+        
+        # Calcular ancho con espaciado de letras (+5px, igual que el título)
+        date_width_with_spacing = 0
+        for char in date_text:
+            char_bbox = draw.textbbox((0, 0), char, font=date_font)
+            char_width = char_bbox[2] - char_bbox[0]
+            date_width_with_spacing += char_width + letter_spacing
+        date_width_with_spacing -= letter_spacing
+        
+        date_x = (background.width - date_width_with_spacing) // 2
+        date_y = title_y + 130  # Espaciado vertical: 15-20px respecto al título (ajustado por altura de Creepster)
+        
+        # Dibujar sombra suave para subtítulo (mismo estilo que título)
+        current_x_shadow_date = date_x
+        for char in date_text:
+            temp_draw_date.text((current_x_shadow_date + shadow_offset, date_y + shadow_offset), char, 
+                               font=date_font, fill=(0, 0, 0, 153))  # Opacidad 60%
+            char_bbox = draw.textbbox((0, 0), char, font=date_font)
+            char_width = char_bbox[2] - char_bbox[0]
+            current_x_shadow_date += char_width + letter_spacing
+        
+        # Aplicar desenfoque gaussiano a la sombra del subtítulo
+        temp_layer_date = temp_layer_date.filter(ImageFilter.GaussianBlur(4))
+        background = Image.alpha_composite(background, temp_layer_date)
+        draw = ImageDraw.Draw(background)
+        
+        # Dibujar subtítulo con espaciado (blanco puro #FFFFFF)
+        current_x_date = date_x
+        for char in date_text:
+            draw.text((current_x_date, date_y), char, 
+                     font=date_font, fill=(255, 255, 255, 255))  # Blanco puro
+            char_bbox = draw.textbbox((0, 0), char, font=date_font)
+            char_width = char_bbox[2] - char_bbox[0]
+            current_x_date += char_width + letter_spacing
 
         # --- Aviso sobre unicidad del ticket ---
         warning_text = "Este ticket es único y personal. Debe cuidarse y no compartirse."
