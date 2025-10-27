@@ -461,14 +461,27 @@ def generate_invitation_with_qr(token):
         entry_y = qr_y - 50  # +60px hacia arriba
         pass_y = entry_y + 30  # 70px debajo de ENTRY
         
-        # Crear una imagen temporal más grande para la rotación (más espacio horizontal para texto rotado)
-        temp_size = (background.width + 400, background.height + 200)
+        # Calcular el espacio necesario para el texto rotado
+        # Con rotación de 5.5 grados, necesitamos más espacio horizontal
+        import math
+        rotation_angle = math.radians(5.5)
+        
+        # Calcular el ancho total del texto (ENTRY + PASS)
+        total_text_width = max(entry_width_with_spacing, pass_width_with_spacing)
+        total_text_height = 100  # Espacio aproximado para ambas líneas
+        
+        # Calcular las dimensiones después de la rotación
+        rotated_width = int(abs(total_text_width * math.cos(rotation_angle)) + abs(total_text_height * math.sin(rotation_angle)))
+        rotated_height = int(abs(total_text_width * math.sin(rotation_angle)) + abs(total_text_height * math.cos(rotation_angle)))
+        
+        # Crear imagen temporal con espacio suficiente para la rotación
+        temp_size = (background.width + rotated_width + 100, background.height + rotated_height + 100)
         temp_layer_entry = Image.new('RGBA', temp_size, (0, 0, 0, 0))
         temp_draw_entry = ImageDraw.Draw(temp_layer_entry)
         
-        # Ajustar coordenadas para la imagen temporal más grande (más espacio horizontal)
-        temp_entry_x = entry_x + 200  # Más espacio horizontal para evitar corte
-        temp_entry_y = entry_y + 100
+        # Centrar el texto en la imagen temporal
+        temp_entry_x = (temp_size[0] - total_text_width) // 2
+        temp_entry_y = (temp_size[1] - total_text_height) // 2
         
         # Dibujar sombra suave para ENTRY (primera línea)
         current_x_shadow_entry = temp_entry_x
@@ -496,16 +509,16 @@ def generate_invitation_with_qr(token):
         temp_layer_entry = temp_layer_entry.rotate(5.5, expand=True, fillcolor=(255, 255, 255, 0))
         
         # Recortar la imagen rotada al tamaño original y pegar en la posición correcta
-        rotated_width, rotated_height = temp_layer_entry.size
-        crop_x = (rotated_width - background.width) // 2
-        crop_y = (rotated_height - background.height) // 2
+        final_width, final_height = temp_layer_entry.size
+        crop_x = (final_width - background.width) // 2
+        crop_y = (final_height - background.height) // 2
         temp_layer_entry = temp_layer_entry.crop((crop_x, crop_y, crop_x + background.width, crop_y + background.height))
         
         # Componer la sombra rotada
         background = Image.alpha_composite(background, temp_layer_entry)
         draw = ImageDraw.Draw(background)
         
-        # Crear capa temporal para el texto principal
+        # Crear capa temporal para el texto principal (mismo tamaño que la sombra)
         temp_layer_text = Image.new('RGBA', temp_size, (0, 0, 0, 0))
         temp_draw_text = ImageDraw.Draw(temp_layer_text)
         
@@ -532,9 +545,9 @@ def generate_invitation_with_qr(token):
         temp_layer_text = temp_layer_text.rotate(5.5, expand=True, fillcolor=(255, 255, 255, 0))
         
         # Recortar la imagen rotada al tamaño original y pegar en la posición correcta
-        rotated_width, rotated_height = temp_layer_text.size
-        crop_x = (rotated_width - background.width) // 2
-        crop_y = (rotated_height - background.height) // 2
+        final_width, final_height = temp_layer_text.size
+        crop_x = (final_width - background.width) // 2
+        crop_y = (final_height - background.height) // 2
         temp_layer_text = temp_layer_text.crop((crop_x, crop_y, crop_x + background.width, crop_y + background.height))
         
         # Componer el texto rotado
@@ -546,7 +559,7 @@ def generate_invitation_with_qr(token):
         warning_bbox = draw.textbbox((0, 0), warning_text, font=font_small)
         warning_width = warning_bbox[2] - warning_bbox[0]
         warning_x = (background.width - warning_width) // 2
-        warning_y = background.height - 120
+        warning_y = background.height - 80  # Ajustado para móviles (menos margen)
         
         # Fondo semi-transparente para el aviso
         padding = 15
