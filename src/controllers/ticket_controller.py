@@ -434,7 +434,7 @@ def generate_invitation_with_qr(token):
         entry_pass_text = "ENTRY PASS"
         
         # Crear fuente más grande para ENTRY PASS (usando date_font que es más grande)
-        entry_font = ImageFont.truetype(dmserif_path, 60)  # Más grande que font_small (40)
+        entry_font = ImageFont.truetype(dmserif_path, 80)  # Más grande que font_small (40)
         
         # Calcular ancho con espaciado de letras (+5px, igual que otros textos)
         entry_width_with_spacing = 0
@@ -444,8 +444,8 @@ def generate_invitation_with_qr(token):
             entry_width_with_spacing += char_width + letter_spacing
         entry_width_with_spacing -= letter_spacing
         
-        entry_x = (background.width - entry_width_with_spacing) // 2 + 4  # +4px hacia la derecha
-        entry_y = qr_y - 90  # +90px hacia arriba
+        entry_x = (background.width - entry_width_with_spacing) // 2 + 8  # +8px hacia la derecha
+        entry_y = qr_y - 60  # +60px hacia arriba
         
         # Crear una imagen temporal más grande para la rotación
         temp_size = (background.width + 200, background.height + 200)
