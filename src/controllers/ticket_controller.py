@@ -405,7 +405,7 @@ def generate_invitation_with_qr(token):
         date_width_with_spacing -= letter_spacing
         
         date_x = (background.width - date_width_with_spacing) // 2
-        date_y = title_y + 180  # Espaciado vertical aumentado para dar más espacio entre título y subtítulo
+        date_y = title_y + 140  # Espaciado vertical aumentado para dar más espacio entre título y subtítulo
         
         # Dibujar sombra suave para subtítulo (mismo estilo que título)
         current_x_shadow_date = date_x
