@@ -337,7 +337,7 @@ def generate_invitation_with_qr(token):
         try:
             title_font = ImageFont.truetype(dmserif_path, 110)   # URUBO WEST - DM Serif Display
             date_font = ImageFont.truetype(dmserif_path, 50)     # 1º DE NOVIEMBRE - DM Serif Display
-            font_small = ImageFont.truetype(dmserif_path, 32)    # Warning - DM Serif Display
+            font_small = ImageFont.truetype(dmserif_path, 40)    # Warning - DM Serif Display
             print(f"✓ Fuentes cargadas:")
             print(f"  - Título: DM Serif Display 160pt (elegante, serif)")
             print(f"  - Subtítulo: DM Serif Display 60pt (elegante, serif)")
@@ -430,8 +430,49 @@ def generate_invitation_with_qr(token):
             char_width = char_bbox[2] - char_bbox[0]
             current_x_date += char_width + letter_spacing
 
+        # --- Texto "ENTRY PASS" en rojo arriba del QR ---
+        entry_pass_text = "ENTRY PASS"
+        
+        # Crear capa temporal para sombra del ENTRY PASS
+        temp_layer_entry = Image.new('RGBA', background.size, (0, 0, 0, 0))
+        temp_draw_entry = ImageDraw.Draw(temp_layer_entry)
+        
+        # Calcular ancho con espaciado de letras (+5px, igual que otros textos)
+        entry_width_with_spacing = 0
+        for char in entry_pass_text:
+            char_bbox = draw.textbbox((0, 0), char, font=font_small)
+            char_width = char_bbox[2] - char_bbox[0]
+            entry_width_with_spacing += char_width + letter_spacing
+        entry_width_with_spacing -= letter_spacing
+        
+        entry_x = (background.width - entry_width_with_spacing) // 2
+        entry_y = qr_y - 80  # Posicionar arriba del QR
+        
+        # Dibujar sombra suave para ENTRY PASS
+        current_x_shadow_entry = entry_x
+        for char in entry_pass_text:
+            temp_draw_entry.text((current_x_shadow_entry + shadow_offset, entry_y + shadow_offset), char, 
+                               font=font_small, fill=(0, 0, 0, 153))  # Opacidad 60%
+            char_bbox = draw.textbbox((0, 0), char, font=font_small)
+            char_width = char_bbox[2] - char_bbox[0]
+            current_x_shadow_entry += char_width + letter_spacing
+        
+        # Aplicar desenfoque gaussiano a la sombra del ENTRY PASS
+        temp_layer_entry = temp_layer_entry.filter(ImageFilter.GaussianBlur(4))
+        background = Image.alpha_composite(background, temp_layer_entry)
+        draw = ImageDraw.Draw(background)
+        
+        # Dibujar ENTRY PASS con espaciado (rojo #FF0000)
+        current_x_entry = entry_x
+        for char in entry_pass_text:
+            draw.text((current_x_entry, entry_y), char, 
+                     font=font_small, fill=(255, 0, 0, 255))  # Rojo puro
+            char_bbox = draw.textbbox((0, 0), char, font=font_small)
+            char_width = char_bbox[2] - char_bbox[0]
+            current_x_entry += char_width + letter_spacing
+
         # --- Aviso sobre unicidad del ticket ---
-        warning_text = "Esta imagen representa una entrada es única y personal y no debe compartirse."
+        warning_text = "Esta imagen es única y personal, no debe ser compartida."
         warning_bbox = draw.textbbox((0, 0), warning_text, font=font_small)
         warning_width = warning_bbox[2] - warning_bbox[0]
         warning_x = (background.width - warning_width) // 2
