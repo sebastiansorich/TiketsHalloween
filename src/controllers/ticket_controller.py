@@ -436,10 +436,6 @@ def generate_invitation_with_qr(token):
         # Crear fuente más grande para ENTRY PASS (usando date_font que es más grande)
         entry_font = ImageFont.truetype(dmserif_path, 60)  # Más grande que font_small (40)
         
-        # Crear capa temporal para sombra del ENTRY PASS
-        temp_layer_entry = Image.new('RGBA', background.size, (0, 0, 0, 0))
-        temp_draw_entry = ImageDraw.Draw(temp_layer_entry)
-        
         # Calcular ancho con espaciado de letras (+5px, igual que otros textos)
         entry_width_with_spacing = 0
         for char in entry_pass_text:
@@ -451,10 +447,19 @@ def generate_invitation_with_qr(token):
         entry_x = (background.width - entry_width_with_spacing) // 2 + 2  # +2px hacia la derecha
         entry_y = qr_y - 100  # Posicionar más arriba del QR para dar espacio a la rotación
         
+        # Crear una imagen temporal más grande para la rotación
+        temp_size = (background.width + 200, background.height + 200)
+        temp_layer_entry = Image.new('RGBA', temp_size, (0, 0, 0, 0))
+        temp_draw_entry = ImageDraw.Draw(temp_layer_entry)
+        
+        # Ajustar coordenadas para la imagen temporal más grande
+        temp_entry_x = entry_x + 100
+        temp_entry_y = entry_y + 100
+        
         # Dibujar sombra suave para ENTRY PASS
-        current_x_shadow_entry = entry_x
+        current_x_shadow_entry = temp_entry_x
         for char in entry_pass_text:
-            temp_draw_entry.text((current_x_shadow_entry + shadow_offset, entry_y + shadow_offset), char, 
+            temp_draw_entry.text((current_x_shadow_entry + shadow_offset, temp_entry_y + shadow_offset), char, 
                                font=entry_font, fill=(0, 0, 0, 153))  # Opacidad 60%
             char_bbox = draw.textbbox((0, 0), char, font=entry_font)
             char_width = char_bbox[2] - char_bbox[0]
@@ -466,23 +471,24 @@ def generate_invitation_with_qr(token):
         # Rotar la capa de sombra con la misma inclinación que el QR (5.5 grados)
         temp_layer_entry = temp_layer_entry.rotate(5.5, expand=True, fillcolor=(255, 255, 255, 0))
         
-        # Recalcular la posición después de la rotación
+        # Recortar la imagen rotada al tamaño original y pegar en la posición correcta
         rotated_width, rotated_height = temp_layer_entry.size
-        entry_x_rotated = entry_x - (rotated_width - background.width) // 2
-        entry_y_rotated = entry_y - (rotated_height - background.height) // 2
+        crop_x = (rotated_width - background.width) // 2
+        crop_y = (rotated_height - background.height) // 2
+        temp_layer_entry = temp_layer_entry.crop((crop_x, crop_y, crop_x + background.width, crop_y + background.height))
         
         # Componer la sombra rotada
         background = Image.alpha_composite(background, temp_layer_entry)
         draw = ImageDraw.Draw(background)
         
         # Crear capa temporal para el texto principal
-        temp_layer_text = Image.new('RGBA', background.size, (0, 0, 0, 0))
+        temp_layer_text = Image.new('RGBA', temp_size, (0, 0, 0, 0))
         temp_draw_text = ImageDraw.Draw(temp_layer_text)
         
         # Dibujar ENTRY PASS con espaciado (rojo #FF0000)
-        current_x_entry = entry_x
+        current_x_entry = temp_entry_x
         for char in entry_pass_text:
-            temp_draw_text.text((current_x_entry, entry_y), char, 
+            temp_draw_text.text((current_x_entry, temp_entry_y), char, 
                               font=entry_font, fill=(255, 0, 0, 255))  # Rojo puro
             char_bbox = draw.textbbox((0, 0), char, font=entry_font)
             char_width = char_bbox[2] - char_bbox[0]
@@ -490,6 +496,12 @@ def generate_invitation_with_qr(token):
         
         # Rotar el texto principal con la misma inclinación que el QR (5.5 grados)
         temp_layer_text = temp_layer_text.rotate(5.5, expand=True, fillcolor=(255, 255, 255, 0))
+        
+        # Recortar la imagen rotada al tamaño original y pegar en la posición correcta
+        rotated_width, rotated_height = temp_layer_text.size
+        crop_x = (rotated_width - background.width) // 2
+        crop_y = (rotated_height - background.height) // 2
+        temp_layer_text = temp_layer_text.crop((crop_x, crop_y, crop_x + background.width, crop_y + background.height))
         
         # Componer el texto rotado
         background = Image.alpha_composite(background, temp_layer_text)
