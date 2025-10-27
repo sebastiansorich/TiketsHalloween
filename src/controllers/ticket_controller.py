@@ -556,23 +556,36 @@ def generate_invitation_with_qr(token):
 
         # --- Aviso sobre unicidad del ticket ---
         warning_text = "Esta imagen es única y personal, no debe ser compartida."
-        warning_bbox = draw.textbbox((0, 0), warning_text, font=font_small)
-        warning_width = warning_bbox[2] - warning_bbox[0]
-        warning_x = (background.width - warning_width) // 2
-        warning_y = background.height - 80  # Ajustado para móviles (menos margen)
         
-        # Fondo semi-transparente para el aviso
-        padding = 15
+        # Envolver el texto para móviles (margen lateral de 40px)
+        from textwrap import wrap
+        max_text_width = background.width - 80
+        # Estimar caracteres por línea según ancho promedio del carácter con la fuente
+        avg_char_width = draw.textlength("ABCDEFGHIJKLMNOPQRSTUVWXYZ", font=font_small) / 26.0
+        chars_per_line = max(1, int(max_text_width / max(1, avg_char_width)))
+        wrapped_lines = wrap(warning_text, width=chars_per_line)
+        wrapped_text = "\n".join(wrapped_lines)
+        
+        # Medir el bloque multilínea
+        warning_bbox = draw.multiline_textbbox((0, 0), wrapped_text, font=font_small, spacing=6, align="center")
+        warning_width = warning_bbox[2] - warning_bbox[0]
+        warning_height = warning_bbox[3] - warning_bbox[1]
+        warning_x = (background.width - warning_width) // 2
+        warning_y = background.height - (warning_height + 40)  # 40px desde el borde inferior
+        
+        # Fondo semi-transparente con padding
+        padding_x = 20
+        padding_y = 14
         warning_rect = [
-            warning_x - padding, 
-            warning_y - padding, 
-            warning_x + warning_width + padding, 
-            warning_y + 45 + padding
+            warning_x - padding_x,
+            warning_y - padding_y,
+            warning_x + warning_width + padding_x,
+            warning_y + warning_height + padding_y,
         ]
         draw.rectangle(warning_rect, fill=(0, 0, 0, 220))
         
-        draw.text((warning_x, warning_y), warning_text, 
-                 font=font_small, fill=(255, 255, 255, 255))
+        # Texto multilínea centrado
+        draw.multiline_text((warning_x, warning_y), wrapped_text, font=font_small, fill=(255, 255, 255, 255), spacing=6, align="center")
 
         # --- Convertir a RGB para JPEG (JPEG no soporta transparencia) ---
         # Crear fondo blanco para reemplazar transparencia
