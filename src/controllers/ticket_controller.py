@@ -253,7 +253,7 @@ def generate_invitation_with_qr(token):
 
         # 📍 Posicionar más a la derecha
         qr_x = (background.width - qr_img.width) // 2 + 43
-        qr_y = int(background.height * 0.49)
+        qr_y = int(background.height * 0.55)
 
         # 🧩 Integración realista del QR con el fondo
         #    - Muestrea color promedio del área
@@ -335,9 +335,9 @@ def generate_invitation_with_qr(token):
         # Cargar fuentes con tamaños específicos
         # Título: DM Serif Display 160pt | Subtítulo: DM Serif Display 60pt | Warning: DM Serif Display 32pt
         try:
-            title_font = ImageFont.truetype(dmserif_path, 110)   # URUBO WEST - DM Serif Display
-            date_font = ImageFont.truetype(dmserif_path, 50)     # 1º DE NOVIEMBRE - DM Serif Display
-            font_small = ImageFont.truetype(dmserif_path, 40)    # Warning - DM Serif Display
+            title_font = ImageFont.truetype(dmserif_path, 120)   # URUBO WEST - DM Serif Display
+            date_font = ImageFont.truetype(dmserif_path, 60)     # 1º DE NOVIEMBRE - DM Serif Display
+            font_small = ImageFont.truetype(dmserif_path, 50)    # Warning - DM Serif Display
             print(f"✓ Fuentes cargadas:")
             print(f"  - Título: DM Serif Display 160pt (elegante, serif)")
             print(f"  - Subtítulo: DM Serif Display 60pt (elegante, serif)")
@@ -354,7 +354,7 @@ def generate_invitation_with_qr(token):
         temp_draw = ImageDraw.Draw(temp_layer)
         
         # Calcular ancho con espaciado de letras (+5px según especificaciones)
-        letter_spacing = 5
+        letter_spacing = 0
         title_width_with_spacing = 0
         for char in title_text:
             char_bbox = draw.textbbox((0, 0), char, font=title_font)
@@ -434,7 +434,7 @@ def generate_invitation_with_qr(token):
         entry_pass_text = "ENTRY PASS"
         
         # Crear fuente más grande para ENTRY PASS (usando date_font que es más grande)
-        entry_font = ImageFont.truetype(dmserif_path, 80)  # Más grande que font_small (40)
+        entry_font = ImageFont.truetype(dmserif_path, 60)     # Más grande que font_small (40)
         
         # Calcular ancho con espaciado de letras (+5px, igual que otros textos)
         entry_width_with_spacing = 0
@@ -460,7 +460,7 @@ def generate_invitation_with_qr(token):
         current_x_shadow_entry = temp_entry_x
         for char in entry_pass_text:
             temp_draw_entry.text((current_x_shadow_entry + shadow_offset, temp_entry_y + shadow_offset), char, 
-                               font=entry_font, fill=(0, 0, 0, 153))  # Opacidad 60%
+                               font=entry_font, fill=(0, 0, 0, 255))  # Opacidad 60%
             char_bbox = draw.textbbox((0, 0), char, font=entry_font)
             char_width = char_bbox[2] - char_bbox[0]
             current_x_shadow_entry += char_width + letter_spacing
