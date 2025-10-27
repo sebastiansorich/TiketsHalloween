@@ -433,6 +433,9 @@ def generate_invitation_with_qr(token):
         # --- Texto "ENTRY PASS" en rojo arriba del QR ---
         entry_pass_text = "ENTRY PASS"
         
+        # Crear fuente más grande para ENTRY PASS (usando date_font que es más grande)
+        entry_font = ImageFont.truetype(dmserif_path, 60)  # Más grande que font_small (40)
+        
         # Crear capa temporal para sombra del ENTRY PASS
         temp_layer_entry = Image.new('RGBA', background.size, (0, 0, 0, 0))
         temp_draw_entry = ImageDraw.Draw(temp_layer_entry)
@@ -440,36 +443,57 @@ def generate_invitation_with_qr(token):
         # Calcular ancho con espaciado de letras (+5px, igual que otros textos)
         entry_width_with_spacing = 0
         for char in entry_pass_text:
-            char_bbox = draw.textbbox((0, 0), char, font=font_small)
+            char_bbox = draw.textbbox((0, 0), char, font=entry_font)
             char_width = char_bbox[2] - char_bbox[0]
             entry_width_with_spacing += char_width + letter_spacing
         entry_width_with_spacing -= letter_spacing
         
-        entry_x = (background.width - entry_width_with_spacing) // 2
-        entry_y = qr_y - 80  # Posicionar arriba del QR
+        entry_x = (background.width - entry_width_with_spacing) // 2 + 2  # +2px hacia la derecha
+        entry_y = qr_y - 100  # Posicionar más arriba del QR para dar espacio a la rotación
         
         # Dibujar sombra suave para ENTRY PASS
         current_x_shadow_entry = entry_x
         for char in entry_pass_text:
             temp_draw_entry.text((current_x_shadow_entry + shadow_offset, entry_y + shadow_offset), char, 
-                               font=font_small, fill=(0, 0, 0, 153))  # Opacidad 60%
-            char_bbox = draw.textbbox((0, 0), char, font=font_small)
+                               font=entry_font, fill=(0, 0, 0, 153))  # Opacidad 60%
+            char_bbox = draw.textbbox((0, 0), char, font=entry_font)
             char_width = char_bbox[2] - char_bbox[0]
             current_x_shadow_entry += char_width + letter_spacing
         
         # Aplicar desenfoque gaussiano a la sombra del ENTRY PASS
         temp_layer_entry = temp_layer_entry.filter(ImageFilter.GaussianBlur(4))
+        
+        # Rotar la capa de sombra con la misma inclinación que el QR (5.5 grados)
+        temp_layer_entry = temp_layer_entry.rotate(5.5, expand=True, fillcolor=(255, 255, 255, 0))
+        
+        # Recalcular la posición después de la rotación
+        rotated_width, rotated_height = temp_layer_entry.size
+        entry_x_rotated = entry_x - (rotated_width - background.width) // 2
+        entry_y_rotated = entry_y - (rotated_height - background.height) // 2
+        
+        # Componer la sombra rotada
         background = Image.alpha_composite(background, temp_layer_entry)
         draw = ImageDraw.Draw(background)
+        
+        # Crear capa temporal para el texto principal
+        temp_layer_text = Image.new('RGBA', background.size, (0, 0, 0, 0))
+        temp_draw_text = ImageDraw.Draw(temp_layer_text)
         
         # Dibujar ENTRY PASS con espaciado (rojo #FF0000)
         current_x_entry = entry_x
         for char in entry_pass_text:
-            draw.text((current_x_entry, entry_y), char, 
-                     font=font_small, fill=(255, 0, 0, 255))  # Rojo puro
-            char_bbox = draw.textbbox((0, 0), char, font=font_small)
+            temp_draw_text.text((current_x_entry, entry_y), char, 
+                              font=entry_font, fill=(255, 0, 0, 255))  # Rojo puro
+            char_bbox = draw.textbbox((0, 0), char, font=entry_font)
             char_width = char_bbox[2] - char_bbox[0]
             current_x_entry += char_width + letter_spacing
+        
+        # Rotar el texto principal con la misma inclinación que el QR (5.5 grados)
+        temp_layer_text = temp_layer_text.rotate(5.5, expand=True, fillcolor=(255, 255, 255, 0))
+        
+        # Componer el texto rotado
+        background = Image.alpha_composite(background, temp_layer_text)
+        draw = ImageDraw.Draw(background)
 
         # --- Aviso sobre unicidad del ticket ---
         warning_text = "Esta imagen es única y personal, no debe ser compartida."
