@@ -208,6 +208,7 @@ def generate_invitation_with_qr(token):
     try:
         from PIL import Image, ImageDraw, ImageFont
         import qrcode, os, io
+        import requests
         from flask import send_file
 
         # --- Crear el código QR ---
@@ -251,8 +252,8 @@ def generate_invitation_with_qr(token):
         qr_img = qr_img.rotate(5.5, expand=True, fillcolor=(255, 255, 255, 0))
 
         # 📍 Posicionar más a la derecha
-        qr_x = (background.width - qr_img.width) // 2 + 70
-        qr_y = int(background.height * 0.50)
+        qr_x = (background.width - qr_img.width) // 2 + 60
+        qr_y = int(background.height * 0.40)
 
         # 🧩 Integración realista del QR con el fondo
         #    - Muestrea color promedio del área
@@ -305,44 +306,76 @@ def generate_invitation_with_qr(token):
         # Obtener directorio del proyecto
         project_dir = os.path.abspath(os.path.join(base_dir, '..', '..'))
         
-        # Lista de fuentes a probar (incluye ruta del proyecto)
-        # Primero intenta cargar fuentes personalizadas de terror/horror
-        font_paths = [
-            os.path.join(project_dir, 'static', 'fonts', 'Horror.ttf'),
-            os.path.join(project_dir, 'static', 'fonts', 'Creepster.ttf'),
-            os.path.join(project_dir, 'static', 'fonts', 'Arial-Bold.ttf'),
-            os.path.join(project_dir, 'static', 'fonts', 'Arial.ttf'),
-            "C:/Windows/Fonts/ariblk.ttf",  # Arial Black (más gruesa)
-            "C:/Windows/Fonts/arialbd.ttf",  # Arial Bold
-            "C:/Windows/Fonts/arial.ttf",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-            "/System/Library/Fonts/Helvetica.ttc",
-            "arial.ttf"
-        ]
+        # Asegurar fuente Nosifer (Google Fonts) prioritaria
+        fonts_dir = os.path.join(project_dir, 'static', 'fonts')
+        os.makedirs(fonts_dir, exist_ok=True)
+        nosifer_path = os.path.join(fonts_dir, 'Nosifer-Regular.ttf')
+
+        if not os.path.isfile(nosifer_path):
+            nosifer_urls = [
+                'https://github.com/google/fonts/raw/main/ofl/nosifer/Nosifer-Regular.ttf',
+                'https://raw.githubusercontent.com/google/fonts/main/ofl/nosifer/Nosifer-Regular.ttf'
+            ]
+            for url in nosifer_urls:
+                try:
+                    resp = requests.get(url, timeout=10)
+                    if resp.status_code == 200 and resp.content:
+                        with open(nosifer_path, 'wb') as f:
+                            f.write(resp.content)
+                        break
+                except Exception:
+                    continue
+
+        # Intentar cargar Nosifer para título y fecha
+        title_font = None
+        date_font = None
         
-        for font_path in font_paths:
+        if os.path.isfile(nosifer_path):
             try:
-                # Tamaños más grandes
-                font_large = ImageFont.truetype(font_path, 90)
-                font_medium = ImageFont.truetype(font_path, 55)
-                font_small = ImageFont.truetype(font_path, 32)
-                print(f"✓ Fuente cargada: {font_path}")  # Debug
-                break  # Si funciona, salir del bucle
+                title_font = ImageFont.truetype(nosifer_path, 90)
+                date_font = ImageFont.truetype(nosifer_path, 55)
+                font_small = ImageFont.truetype(nosifer_path, 32)
+                print(f"✓ Fuente Nosifer cargada: {nosifer_path}")
             except Exception as e:
-                continue
+                print(f"⚠ Error cargando Nosifer: {e}")
+        
+        # Si Nosifer no se cargó, intentar fuentes alternativas
+        if title_font is None:
+            font_paths = [
+                os.path.join(project_dir, 'static', 'fonts', 'Horror.ttf'),
+                os.path.join(project_dir, 'static', 'fonts', 'Creepster.ttf'),
+                os.path.join(project_dir, 'static', 'fonts', 'Arial-Bold.ttf'),
+                os.path.join(project_dir, 'static', 'fonts', 'Arial.ttf'),
+                "C:/Windows/Fonts/ariblk.ttf",  # Arial Black (más gruesa)
+                "C:/Windows/Fonts/arialbd.ttf",  # Arial Bold
+                "C:/Windows/Fonts/arial.ttf",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+                "/System/Library/Fonts/Helvetica.ttc",
+                "arial.ttf"
+            ]
+            
+            for font_path in font_paths:
+                try:
+                    title_font = ImageFont.truetype(font_path, 90)
+                    date_font = ImageFont.truetype(font_path, 55)
+                    font_small = ImageFont.truetype(font_path, 32)
+                    print(f"✓ Fuente alternativa cargada: {font_path}")
+                    break
+                except Exception:
+                    continue
         
         # Si no se encontró ninguna fuente, usar load_default
-        if font_large is None:
-            print("⚠ No se encontró fuente TrueType, usando fuente por defecto")  # Debug
-            font_large = ImageFont.load_default()
-            font_medium = ImageFont.load_default()
+        if title_font is None:
+            print("⚠ No se encontró fuente TrueType, usando fuente por defecto")
+            title_font = ImageFont.load_default()
+            date_font = ImageFont.load_default()
             font_small = ImageFont.load_default()
 
         # --- Texto "URUBO WEST" ---
         title_text = "URUBO WEST"
-        title_bbox = draw.textbbox((0, 0), title_text, font=font_large)
+        title_bbox = draw.textbbox((0, 0), title_text, font=title_font)
         title_width = title_bbox[2] - title_bbox[0]
         title_x = (background.width - title_width) // 2
         title_y = 80
@@ -350,21 +383,21 @@ def generate_invitation_with_qr(token):
         # Dibujar texto con efecto de sombra para simular el estilo del arte
         shadow_offset = 4
         draw.text((title_x + shadow_offset, title_y + shadow_offset), title_text, 
-                 font=font_large, fill=(0, 0, 0, 200))  # Sombra más oscura
+                 font=title_font, fill=(0, 0, 0, 200))  # Sombra más oscura
         draw.text((title_x, title_y), title_text, 
-                 font=font_large, fill=(255, 255, 255, 255))  # Texto blanco
+                 font=title_font, fill=(255, 255, 255, 255))  # Texto blanco
 
         # --- Fecha de la fiesta ---
         date_text = "1º de noviembre"
-        date_bbox = draw.textbbox((0, 0), date_text, font=font_medium)
+        date_bbox = draw.textbbox((0, 0), date_text, font=date_font)
         date_width = date_bbox[2] - date_bbox[0]
         date_x = (background.width - date_width) // 2
         date_y = title_y + 120
         
         draw.text((date_x + shadow_offset, date_y + shadow_offset), date_text, 
-                 font=font_medium, fill=(0, 0, 0, 200))  # Sombra más oscura
+                 font=date_font, fill=(0, 0, 0, 200))  # Sombra más oscura
         draw.text((date_x, date_y), date_text, 
-                 font=font_medium, fill=(255, 255, 255, 255))  # Texto blanco
+                 font=date_font, fill=(255, 255, 255, 255))  # Texto blanco
 
         # --- Aviso sobre unicidad del ticket ---
         warning_text = "Este ticket es único y personal. Debe cuidarse y no compartirse."
