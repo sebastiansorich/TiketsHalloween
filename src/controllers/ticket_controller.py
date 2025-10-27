@@ -255,7 +255,7 @@ def generate_invitation_with_qr(token):
 
         # 📍 Posicionar más a la derecha
         qr_x = (background.width - qr_img.width) // 2 + 43
-        qr_y = int(background.height * 0.45)
+        qr_y = int(background.height * 0.60)
 
         # 🧩 Integración realista del QR con el fondo
         #    - Muestrea color promedio del área
@@ -437,7 +437,7 @@ def generate_invitation_with_qr(token):
         pass_text = " PASS"
         
         # Crear fuente más grande para ENTRY PASS (usando date_font que es más grande)
-        entry_font = ImageFont.truetype(dmserif_path, 60)     # Más grande que font_small (40)
+        entry_font = ImageFont.truetype(dmserif_path, 70)     # Más grande que font_small (40)
         
         # Calcular ancho de cada línea con espaciado de letras (+5px, igual que otros textos)
         entry_width_with_spacing = 0
@@ -458,16 +458,16 @@ def generate_invitation_with_qr(token):
         max_width = max(entry_width_with_spacing, pass_width_with_spacing)
         
         entry_x = (background.width - max_width) // 2 + 8  # +8px hacia la derecha
-        entry_y = qr_y - 60  # +60px hacia arriba
-        pass_y = entry_y + 70  # 70px debajo de ENTRY
+        entry_y = qr_y - 50  # +60px hacia arriba
+        pass_y = entry_y + 30  # 70px debajo de ENTRY
         
-        # Crear una imagen temporal más grande para la rotación
-        temp_size = (background.width + 200, background.height + 200)
+        # Crear una imagen temporal más grande para la rotación (más espacio horizontal para texto rotado)
+        temp_size = (background.width + 400, background.height + 200)
         temp_layer_entry = Image.new('RGBA', temp_size, (0, 0, 0, 0))
         temp_draw_entry = ImageDraw.Draw(temp_layer_entry)
         
-        # Ajustar coordenadas para la imagen temporal más grande
-        temp_entry_x = entry_x + 100
+        # Ajustar coordenadas para la imagen temporal más grande (más espacio horizontal)
+        temp_entry_x = entry_x + 200  # Más espacio horizontal para evitar corte
         temp_entry_y = entry_y + 100
         
         # Dibujar sombra suave para ENTRY (primera línea)
@@ -480,7 +480,7 @@ def generate_invitation_with_qr(token):
             current_x_shadow_entry += char_width + letter_spacing
         
         # Dibujar sombra suave para PASS (segunda línea)
-        temp_pass_y = temp_entry_y + 70  # 70px debajo de ENTRY
+        temp_pass_y = temp_entry_y + 30  # 30px debajo de ENTRY (ajustado según tus cambios)
         current_x_shadow_pass = temp_entry_x
         for char in pass_text:
             temp_draw_entry.text((current_x_shadow_pass + shadow_offset, temp_pass_y + shadow_offset), char, 
@@ -519,7 +519,7 @@ def generate_invitation_with_qr(token):
             current_x_entry += char_width + letter_spacing
         
         # Dibujar PASS con espaciado (rojo #FF0000) - segunda línea
-        temp_pass_y = temp_entry_y + 70  # 70px debajo de ENTRY
+        temp_pass_y = temp_entry_y + 30  # 30px debajo de ENTRY (ajustado según tus cambios)
         current_x_pass = temp_entry_x
         for char in pass_text:
             temp_draw_text.text((current_x_pass, temp_pass_y), char, 
