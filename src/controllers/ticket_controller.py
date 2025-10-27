@@ -252,8 +252,8 @@ def generate_invitation_with_qr(token):
         qr_img = qr_img.rotate(5.5, expand=True, fillcolor=(255, 255, 255, 0))
 
         # 📍 Posicionar más a la derecha
-        qr_x = (background.width - qr_img.width) // 2 + 60
-        qr_y = int(background.height * 0.40)
+        qr_x = (background.width - qr_img.width) // 2 + 55
+        qr_y = int(background.height * 0.55)
 
         # 🧩 Integración realista del QR con el fondo
         #    - Muestrea color promedio del área
