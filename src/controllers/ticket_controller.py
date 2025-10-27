@@ -556,36 +556,54 @@ def generate_invitation_with_qr(token):
 
         # --- Aviso sobre unicidad del ticket ---
         warning_text = "Esta imagen es única y personal, no debe ser compartida."
-        
-        # Envolver el texto para móviles (margen lateral de 40px)
-        from textwrap import wrap
+
+        # Envoltura robusta: medir ancho por línea con textbbox (sin usar APIs nuevas)
         max_text_width = background.width - 80
-        # Estimar caracteres por línea según ancho promedio del carácter con la fuente
-        avg_char_width = draw.textlength("ABCDEFGHIJKLMNOPQRSTUVWXYZ", font=font_small) / 26.0
-        chars_per_line = max(1, int(max_text_width / max(1, avg_char_width)))
-        wrapped_lines = wrap(warning_text, width=chars_per_line)
-        wrapped_text = "\n".join(wrapped_lines)
-        
-        # Medir el bloque multilínea
-        warning_bbox = draw.multiline_textbbox((0, 0), wrapped_text, font=font_small, spacing=6, align="center")
-        warning_width = warning_bbox[2] - warning_bbox[0]
-        warning_height = warning_bbox[3] - warning_bbox[1]
-        warning_x = (background.width - warning_width) // 2
-        warning_y = background.height - (warning_height + 40)  # 40px desde el borde inferior
-        
+        words = warning_text.split(" ")
+        lines = []
+        current_line = ""
+        spacing = 6
+
+        def measure(text):
+            bbox = draw.textbbox((0, 0), text, font=font_small)
+            return (bbox[2] - bbox[0], bbox[3] - bbox[1])
+
+        for word in words:
+            candidate = word if current_line == "" else f"{current_line} {word}"
+            cand_w, _ = measure(candidate)
+            if cand_w <= max_text_width:
+                current_line = candidate
+            else:
+                if current_line:
+                    lines.append(current_line)
+                current_line = word
+        if current_line:
+            lines.append(current_line)
+
+        line_sizes = [measure(line) for line in lines]
+        block_width = max((w for w, h in line_sizes), default=0)
+        block_height = sum((h for w, h in line_sizes)) + spacing * (len(lines) - 1 if lines else 0)
+
+        warning_x = (background.width - block_width) // 2
+        warning_y = background.height - (block_height + 40)
+
         # Fondo semi-transparente con padding
         padding_x = 20
         padding_y = 14
         warning_rect = [
             warning_x - padding_x,
             warning_y - padding_y,
-            warning_x + warning_width + padding_x,
-            warning_y + warning_height + padding_y,
+            warning_x + block_width + padding_x,
+            warning_y + block_height + padding_y,
         ]
         draw.rectangle(warning_rect, fill=(0, 0, 0, 220))
-        
-        # Texto multilínea centrado
-        draw.multiline_text((warning_x, warning_y), wrapped_text, font=font_small, fill=(255, 255, 255, 255), spacing=6, align="center")
+
+        # Dibujar líneas centradas
+        y_cursor = warning_y
+        for (line, (line_w, line_h)) in zip(lines, line_sizes):
+            line_x = (background.width - line_w) // 2
+            draw.text((line_x, y_cursor), line, font=font_small, fill=(255, 255, 255, 255))
+            y_cursor += line_h + spacing
 
         # --- Convertir a RGB para JPEG (JPEG no soporta transparencia) ---
         # Crear fondo blanco para reemplazar transparencia
