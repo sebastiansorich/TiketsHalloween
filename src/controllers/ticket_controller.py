@@ -431,7 +431,7 @@ def generate_invitation_with_qr(token):
             current_x_date += char_width + letter_spacing
 
         # --- Aviso sobre unicidad del ticket ---
-        warning_text = "Este ticket es único y personal. Debe cuidarse y no compartirse."
+        warning_text = "Esta imagen representa una entrada es única y personal y no debe compartirse."
         warning_bbox = draw.textbbox((0, 0), warning_text, font=font_small)
         warning_width = warning_bbox[2] - warning_bbox[0]
         warning_x = (background.width - warning_width) // 2
