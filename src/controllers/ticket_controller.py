@@ -227,22 +227,24 @@ def generate_invitation_with_qr(token):
         image_path = os.path.join(base_dir, '..', '..', 'static', 'invitation_background.png')
         background = Image.open(image_path).convert("RGBA")
 
-        # --- Ajustar proporción ---
-        desired_ratio = 3 / 4
+        # --- Ajustar proporción para móviles (9:16 es ideal para pantallas móviles) ---
+        mobile_ratio = 9 / 16  # Proporción vertical para móviles
         bg_width, bg_height = background.size
         current_ratio = bg_width / bg_height
 
-        if current_ratio > desired_ratio:
-            new_width = int(bg_height * desired_ratio)
+        if current_ratio > mobile_ratio:
+            # Si es más ancho que móvil, recortar los lados
+            new_width = int(bg_height * mobile_ratio)
             left = (bg_width - new_width) // 2
             background = background.crop((left, 0, left + new_width, bg_height))
-        else:
-            new_height = int(bg_width / desired_ratio)
+        elif current_ratio < mobile_ratio:
+            # Si es más alto que móvil, recortar arriba y abajo
+            new_height = int(bg_width / mobile_ratio)
             top = (bg_height - new_height) // 2
             background = background.crop((0, top, bg_width, top + new_height))
 
-        # --- Redimensionar ---
-        background = background.resize((1240, 1754))
+        # --- Redimensionar para móviles (1080x1920 es Full HD móvil) ---
+        background = background.resize((1080, 1920))
 
         # --- Tamaño y posición del QR ---
         qr_size = (400, 400)
@@ -253,7 +255,7 @@ def generate_invitation_with_qr(token):
 
         # 📍 Posicionar más a la derecha
         qr_x = (background.width - qr_img.width) // 2 + 43
-        qr_y = int(background.height * 0.65)
+        qr_y = int(background.height * 0.45)
 
         # 🧩 Integración realista del QR con el fondo
         #    - Muestrea color promedio del área
@@ -559,12 +561,17 @@ def generate_invitation_with_qr(token):
         draw.text((warning_x, warning_y), warning_text, 
                  font=font_small, fill=(255, 255, 255, 255))
 
-        # --- Guardar en memoria ---
+        # --- Convertir a RGB para JPEG (JPEG no soporta transparencia) ---
+        # Crear fondo blanco para reemplazar transparencia
+        rgb_background = Image.new('RGB', background.size, (255, 255, 255))
+        rgb_background.paste(background, mask=background.split()[-1])  # Usar canal alpha como máscara
+        
+        # --- Guardar en memoria como JPEG con alta calidad ---
         img_io = io.BytesIO()
-        background.save(img_io, "PNG")
+        rgb_background.save(img_io, "JPEG", quality=95, optimize=True)
         img_io.seek(0)
 
-        return send_file(img_io, mimetype="image/png")
+        return send_file(img_io, mimetype="image/jpeg")
 
     except Exception as e:
         return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
