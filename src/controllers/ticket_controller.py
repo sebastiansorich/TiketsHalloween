@@ -252,8 +252,8 @@ def generate_invitation_with_qr(token):
         qr_img = qr_img.rotate(5.5, expand=True, fillcolor=(255, 255, 255, 0))
 
         # 📍 Posicionar más a la derecha
-        qr_x = (background.width - qr_img.width) // 2 + 50
-        qr_y = int(background.height * 0.40)
+        qr_x = (background.width - qr_img.width) // 2 + 45
+        qr_y = int(background.height * 0.50)
 
         # 🧩 Integración realista del QR con el fondo
         #    - Muestrea color promedio del área
@@ -306,11 +306,29 @@ def generate_invitation_with_qr(token):
         # Obtener directorio del proyecto
         project_dir = os.path.abspath(os.path.join(base_dir, '..', '..'))
         
-        # Asegurar fuente Nosifer (Google Fonts) prioritaria
+        # Asegurar fuentes prioritarias (Creepster para título, Nosifer para fecha)
         fonts_dir = os.path.join(project_dir, 'static', 'fonts')
         os.makedirs(fonts_dir, exist_ok=True)
+        creepster_path = os.path.join(fonts_dir, 'Creepster-Regular.ttf')
         nosifer_path = os.path.join(fonts_dir, 'Nosifer-Regular.ttf')
 
+        # Descargar Creepster si no existe
+        if not os.path.isfile(creepster_path):
+            creepster_urls = [
+                'https://github.com/google/fonts/raw/main/ofl/creepster/Creepster-Regular.ttf',
+                'https://raw.githubusercontent.com/google/fonts/main/ofl/creepster/Creepster-Regular.ttf'
+            ]
+            for url in creepster_urls:
+                try:
+                    resp = requests.get(url, timeout=10)
+                    if resp.status_code == 200 and resp.content:
+                        with open(creepster_path, 'wb') as f:
+                            f.write(resp.content)
+                        break
+                except Exception:
+                    continue
+
+        # Descargar Nosifer si no existe
         if not os.path.isfile(nosifer_path):
             nosifer_urls = [
                 'https://github.com/google/fonts/raw/main/ofl/nosifer/Nosifer-Regular.ttf',
@@ -326,20 +344,27 @@ def generate_invitation_with_qr(token):
                 except Exception:
                     continue
 
-        # Intentar cargar Nosifer para título y fecha
+        # Intentar cargar Creepster para título (110pt según especificaciones)
         title_font = None
         date_font = None
         
+        if os.path.isfile(creepster_path):
+            try:
+                title_font = ImageFont.truetype(creepster_path, 110)
+                print(f"✓ Fuente Creepster cargada para título: {creepster_path}")
+            except Exception as e:
+                print(f"⚠ Error cargando Creepster: {e}")
+        
+        # Cargar Nosifer para fecha
         if os.path.isfile(nosifer_path):
             try:
-                title_font = ImageFont.truetype(nosifer_path, 90)
                 date_font = ImageFont.truetype(nosifer_path, 55)
                 font_small = ImageFont.truetype(nosifer_path, 32)
-                print(f"✓ Fuente Nosifer cargada: {nosifer_path}")
+                print(f"✓ Fuente Nosifer cargada para fecha: {nosifer_path}")
             except Exception as e:
                 print(f"⚠ Error cargando Nosifer: {e}")
         
-        # Si Nosifer no se cargó, intentar fuentes alternativas
+        # Si Creepster no se cargó, intentar fuentes alternativas para el título
         if title_font is None:
             font_paths = [
                 os.path.join(project_dir, 'static', 'fonts', 'Horror.ttf'),
@@ -373,19 +398,48 @@ def generate_invitation_with_qr(token):
             date_font = ImageFont.load_default()
             font_small = ImageFont.load_default()
 
-        # --- Texto "URUBO WEST" ---
+        # --- Texto "URUBO WEST" con Creepster y espaciado ---
         title_text = "URUBO WEST"
-        title_bbox = draw.textbbox((0, 0), title_text, font=title_font)
-        title_width = title_bbox[2] - title_bbox[0]
-        title_x = (background.width - title_width) // 2
+        
+        # Crear capa temporal para aplicar desenfoque a la sombra
+        temp_layer = Image.new('RGBA', background.size, (0, 0, 0, 0))
+        temp_draw = ImageDraw.Draw(temp_layer)
+        
+        # Calcular ancho con espaciado de letras (+5px según especificaciones)
+        letter_spacing = 5
+        title_width_with_spacing = 0
+        for char in title_text:
+            char_bbox = draw.textbbox((0, 0), char, font=title_font)
+            char_width = char_bbox[2] - char_bbox[0]
+            title_width_with_spacing += char_width + letter_spacing
+        title_width_with_spacing -= letter_spacing  # Quitar espaciado extra del último carácter
+        
+        title_x = (background.width - title_width_with_spacing) // 2
         title_y = 80
         
-        # Dibujar texto con efecto de sombra para simular el estilo del arte
-        shadow_offset = 4
-        draw.text((title_x + shadow_offset, title_y + shadow_offset), title_text, 
-                 font=title_font, fill=(0, 0, 0, 200))  # Sombra más oscura
-        draw.text((title_x, title_y), title_text, 
-                 font=title_font, fill=(255, 255, 255, 255))  # Texto blanco
+        # Dibujar sombra suave con desenfoque (especificaciones: desplazamiento 2px, desenfoque 4px, opacidad 60%)
+        shadow_offset = 2
+        current_x_shadow = title_x
+        for char in title_text:
+            temp_draw.text((current_x_shadow + shadow_offset, title_y + shadow_offset), char, 
+                         font=title_font, fill=(0, 0, 0, 153))  # Opacidad 60% = 153
+            char_bbox = draw.textbbox((0, 0), char, font=title_font)
+            char_width = char_bbox[2] - char_bbox[0]
+            current_x_shadow += char_width + letter_spacing
+        
+        # Aplicar desenfoque gaussiano a la sombra
+        temp_layer = temp_layer.filter(ImageFilter.GaussianBlur(4))
+        background = Image.alpha_composite(background, temp_layer)
+        draw = ImageDraw.Draw(background)
+        
+        # Dibujar texto principal con espaciado (blanco puro #FFFFFF)
+        current_x = title_x
+        for char in title_text:
+            draw.text((current_x, title_y), char, 
+                     font=title_font, fill=(255, 255, 255, 255))  # Blanco puro
+            char_bbox = draw.textbbox((0, 0), char, font=title_font)
+            char_width = char_bbox[2] - char_bbox[0]
+            current_x += char_width + letter_spacing
 
         # --- Fecha de la fiesta ---
         date_text = "1º de noviembre"
